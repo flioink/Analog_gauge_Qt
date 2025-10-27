@@ -11,7 +11,7 @@
 
 #include<windows.h>
 
-int WIDTH = 550 / 2;
+int WIDTH = 220;
 int HEIGHT = WIDTH;
 
 double test_needle_start = -180;
@@ -21,6 +21,8 @@ RadialGauge::RadialGauge(QWidget* parent)
     : QMainWindow(parent)
 {           
     build_UI();
+    setWindowFlags(windowFlags() | Qt::WindowStaysOnTopHint);
+
     adjustSize();
     setFixedSize(size());
     connect_signals();   
@@ -36,50 +38,79 @@ void RadialGauge::build_UI()
     QWidget* central_widget = new QWidget(this);
     QVBoxLayout* master_layout = new QVBoxLayout(central_widget);
 
-    QHBoxLayout* speedometer_area = new QHBoxLayout();
+    QHBoxLayout* gauges_area = new QHBoxLayout();
     QHBoxLayout* buttons_area = new QHBoxLayout();
 
     m_main_slider1 = new QSlider(Qt::Horizontal, this);
-    m_main_slider2 = new QSlider(Qt::Horizontal, this);
-    m_main_slider3 = new QSlider(Qt::Horizontal, this);
+   
     
     m_main_slider1->setRange(0, 100);
-    m_main_slider2->setRange(0, 100);
-    m_main_slider3->setRange(0, 100);
+    
    
     m_main_button = new QPushButton("Gauge Test", this);
 
+    m_system_monitor = new SystemMonitor(this);
+    QTimer* timer = new QTimer(this);
+
+
     // custom gauge
-    m_speed_gauge_1 = new AnalogGauge(test_needle_start, test_rotation_range, "./gauge0.png", this);
-    m_speed_gauge_1->setMinimumSize(WIDTH, WIDTH);   
+    m_cpu_gauge = new AnalogGauge(test_needle_start, test_rotation_range, "./gauge0.png", this);
+    m_cpu_gauge->setMinimumSize(WIDTH, WIDTH); 
+    // add gauge object to layout
+    gauges_area->addWidget(m_cpu_gauge);
+
+
+    connect(timer, &QTimer::timeout, this, [this]() 
+     { 
+        double cpu = m_system_monitor->get_cpu_usage();
+        qDebug() << "CURRENT CPU LOAD: " << cpu;
+        
+        if (cpu < 1)
+        { 
+            cpu = m_last_good_value; // keep previous value if current falls to zero to prevent jitter
+        } 
+        else m_last_good_value = cpu;
+
+        
+
+        m_cpu_gauge->set_speed(cpu);  
+
+        qDebug() << "MEMORY % USED: " << m_system_monitor->get_memory_usage();
+            
+     });
+
+
+    // custom gauge
+    m_memory_gauge = new AnalogGauge(-155, 3.0, "./gauge3.jpg", this);
+    m_memory_gauge->setMinimumSize(WIDTH, WIDTH);
+    // add gauge object to layout
+    gauges_area->addWidget(m_memory_gauge);
+
+    connect(timer, &QTimer::timeout, this, [this]()
+        {
+
+            auto mem_perc_used = m_system_monitor->get_memory_usage();
+
+            qDebug() << "MEMORY % USED: " << m_system_monitor->get_memory_usage();
+
+
+
+            m_memory_gauge->set_speed(mem_perc_used);
+
+            
+
+        });
 
     
 
-    // add gauge object to layout
-    speedometer_area->addWidget(m_speed_gauge_1);
-
-
-    // custom gauge
-    m_speed_gauge_2 = new AnalogGauge(45.0, -0.9, "./gauge2.jpg", this);
-    m_speed_gauge_2->setMinimumSize(WIDTH, WIDTH);
-    // add gauge object to layout
-    speedometer_area->addWidget(m_speed_gauge_2);
-
-
-
-    // custom gauge
-    m_speed_gauge_3 = new AnalogGauge(0, 3.1, "./gauge8.jpg", this);
-    m_speed_gauge_3->setMinimumSize(WIDTH, WIDTH);
-    // add gauge object to layout
-    speedometer_area->addWidget(m_speed_gauge_3);    
+    timer->start(60); // Update every n milliseconds   
     
     
     buttons_area->addWidget(m_main_slider1);    
-    buttons_area->addWidget(m_main_slider2);    
-    buttons_area->addWidget(m_main_slider3); 
+    
     buttons_area->addWidget(m_main_button);
 
-    master_layout->addLayout(speedometer_area, 5);
+    master_layout->addLayout(gauges_area, 5);
     master_layout->addLayout(buttons_area, 1);
 
 
@@ -91,21 +122,20 @@ void RadialGauge::build_UI()
 void RadialGauge::connect_signals()
 { 
    // connect the slider from the "stage" class to the "gauge" class method that sets speed 
-   connect(m_main_slider1, &QSlider::valueChanged, this, [this](int value){ m_speed_gauge_1->set_speed(value); });
-   connect(m_main_slider2, &QSlider::valueChanged, this, [this](int value){ m_speed_gauge_2->set_speed(value); });
-   connect(m_main_slider3, &QSlider::valueChanged, this, [this](int value){ m_speed_gauge_3->set_speed(value); });
+   connect(m_main_slider1, &QSlider::valueChanged, this, [this](int value){ m_cpu_gauge->set_speed(value); });
+   /*connect(m_main_slider2, &QSlider::valueChanged, this, [this](int value){ m_speed_gauge_2->set_speed(value); });
+   connect(m_main_slider3, &QSlider::valueChanged, this, [this](int value){ m_speed_gauge_3->set_speed(value); });*/
 
    connect(m_main_button, &QPushButton::clicked, this, [this](int value)
        {
            m_main_button->setEnabled(false);
-           m_speed_gauge_1->move_needle(); 
+           m_cpu_gauge->move_needle(); 
 
            QTimer::singleShot( 2000, this, [this]() { m_main_button->setEnabled(true);} );
        });
 
 
-   connect(m_main_button, &QPushButton::clicked, this, [this](int value) { m_speed_gauge_2->move_needle(); });
-   connect(m_main_button, &QPushButton::clicked, this, [this](int value) { m_speed_gauge_3->move_needle(); });
+   
 
 }
 
@@ -174,7 +204,7 @@ void AnalogGauge::set_speed(double speed)
 
     update(); // call repaint 
 
-    qDebug() << "Current angle" << m_current_angle;
+    //qDebug() << "Current angle" << m_current_angle;
 }
 
 double AnalogGauge::map_speed_to_angle(int speed) 
@@ -186,7 +216,7 @@ double AnalogGauge::map_speed_to_angle(int speed)
 
 void AnalogGauge::move_needle()
 {
-    emit animation_started();
+    
 
     //m_main_button
     QSequentialAnimationGroup* group = new QSequentialAnimationGroup(this);
@@ -222,7 +252,7 @@ void AnalogGauge::move_needle()
     group->addAnimation(retreat);
     group->start(QAbstractAnimation::DeleteWhenStopped); // clean up when done
 
-    emit animation_finished();
+    
 }
 
 // this is for the animation macro system from the header
@@ -245,3 +275,62 @@ void AnalogGauge::load_bg(const QString& bg)
 }
 
 
+// system monitor class uses the Pdh header
+
+SystemMonitor::SystemMonitor(QObject* parent): QObject(parent)
+{
+    PdhOpenQuery(NULL, 0, &m_cpu_query);
+    PdhAddCounter(m_cpu_query, L"\\Processor(_Total)\\% Processor Time", 0, &m_cpu_counter);
+
+    PdhOpenQuery(NULL, 0, &m_memory_query);
+    PdhAddCounter(m_memory_query, L"\\Memory\\Available MBytes", 0, &m_memory_counter);
+}
+
+SystemMonitor::~SystemMonitor()
+{
+}
+
+double SystemMonitor::get_cpu_usage()
+{
+    PdhCollectQueryData(m_cpu_query);
+    PDH_FMT_COUNTERVALUE value;
+    PdhGetFormattedCounterValue(m_cpu_counter, PDH_FMT_DOUBLE, NULL, &value);
+
+    double current_cpu = value.doubleValue;
+
+    //qDebug() << "CURRENT CPU LOAD: " << current_cpu;
+
+    // low pass
+    m_smooth_cpu = 0.9 * m_smooth_cpu + current_cpu * 0.1;
+        
+    return m_smooth_cpu;
+}
+
+double SystemMonitor::get_memory_usage()
+{
+
+    PdhCollectQueryData(m_memory_query);
+    PDH_FMT_COUNTERVALUE value;
+    PdhGetFormattedCounterValue(m_memory_counter, PDH_FMT_DOUBLE, NULL, &value);
+
+    // get total memory to calculate percentage
+    MEMORYSTATUSEX mem_info;
+    mem_info.dwLength = sizeof(MEMORYSTATUSEX);
+    GlobalMemoryStatusEx(&mem_info);
+
+    DWORDLONG total_memory = mem_info.ullTotalPhys / (1024 * 1024); // convert to MB
+    double available_MB = value.doubleValue;
+    double used_memory_percentage = ((total_memory - available_MB) / total_memory) * 100.0;
+
+    
+
+    return used_memory_percentage;
+}
+
+
+// 1. "Start recording performance data"
+//PdhCollectQueryData(query); 
+
+// 2. "Get the recorded value in a usable format"  
+//PdhGetFormattedCounterValue(counter, PDH_FMT_DOUBLE, NULL, &value);
+// "Give me that snapshot as a double"
