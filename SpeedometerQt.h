@@ -27,9 +27,17 @@ public:
 
 private:
 
-    QSlider* m_main_slider;
+    QSlider* m_main_slider1;
+    QSlider* m_main_slider2;
+    QSlider* m_main_slider3;
+
     QPushButton* m_main_button;
-    AnalogGauge* m_speed_gauge;  
+    AnalogGauge* m_speed_gauge_1;  
+    AnalogGauge* m_speed_gauge_2;  
+    AnalogGauge* m_speed_gauge_3;  
+    AnalogGauge* m_speed_gauge_4;  
+    AnalogGauge* m_speed_gauge_5;  
+    AnalogGauge* m_speed_gauge_6;  
 
     
 };
@@ -60,7 +68,7 @@ private:
     
 
 public:
-    AnalogGauge(double needle_start_pos, double max_range, QWidget* parent = nullptr); // max_range is about 3.6 for 360 degree rotation
+    AnalogGauge(double needle_start_pos, double max_range, QString bg, QWidget* parent = nullptr); // max_range is about 3.6 for 360 degree rotation
 
     void paintEvent(QPaintEvent* event) override;
 
@@ -77,8 +85,14 @@ public:
 
     void set_current_angle(double angle);
 
+    void load_bg(const QString& bg);
+
 signals:
     void current_angle_changed(double new_angle);
+
+
+    void animation_started();
+    void animation_finished();
 
 };
     
