@@ -12,7 +12,7 @@
 #include <QPoint>
 
 
-int WIDTH = 160;
+int WIDTH = 220;
 int HEIGHT = WIDTH;
 
 
@@ -29,10 +29,41 @@ RadialGauge::RadialGauge(QWidget* parent)
     connect_button_signals();  
 
     setWindowFlags(windowFlags() | Qt::WindowStaysOnTopHint);
+
+    setAttribute(Qt::WA_TranslucentBackground);
+    setStyleSheet("background:transparent;");
+
+    run_demo_mode();
 }
 
 RadialGauge::~RadialGauge()
 {}
+
+void RadialGauge::create_close_button()
+{
+    // main_widget and gauges_layout have different dimensions - use size constants to position buttons
+
+    m_close_button = new QPushButton("X", this);
+    m_close_button->setFixedSize(width() * 0.05, height() * 0.06);
+    m_close_button->move(WIDTH * 3 - m_close_button->width() + 20, 10);
+}
+
+
+
+void RadialGauge::create_demo_button()
+{
+    m_demo_button = new QPushButton("Demo", this);
+
+    // size as percentage of window
+    m_demo_button->setFixedSize(width() * 0.1, height() * 0.06); 
+
+    
+    //m_demo_button->move(m_demo_button->width() - m_demo_button->width() * 0.7, 10);// top-right   
+    m_demo_button->move(WIDTH * 0.5 - m_demo_button->width() * 0.4, 40);  // upper middle of the first gauge 
+   
+}
+
+
 
 //mouse events overrides
 void RadialGauge::mousePressEvent(QMouseEvent* event) 
@@ -64,12 +95,8 @@ void RadialGauge::build_UI()
     QVBoxLayout* master_layout = new QVBoxLayout(central_widget);
 
     m_gauges_area = new QHBoxLayout();
-    m_buttons_area = new QHBoxLayout();
-
-    /*m_main_slider1 = new QSlider(Qt::Horizontal, this);    
-    m_main_slider1->setRange(0, 100);*/    
+    //m_buttons_area = new QHBoxLayout();      
    
-    m_main_button = new QPushButton("Gauge Test", this);
     m_system_monitor = new SystemMonitor(this);
     m_timer = new QTimer(this);
 
@@ -77,28 +104,26 @@ void RadialGauge::build_UI()
 
     create_memory_gauge();
 
-    create_disk_gauge();  
+    create_disk_gauge();
+
+    create_close_button();
+    create_demo_button();
     
 
-    m_timer->start(100); // Update every n milliseconds       
-        
-    
-    m_buttons_area->addWidget(m_main_button);
+    m_timer->start(100); // Update every n milliseconds      
 
-    master_layout->addLayout(m_gauges_area, 5);
-    master_layout->addLayout(m_buttons_area, 1);
-
+    master_layout->addLayout(m_gauges_area);
+    //master_layout->addLayout(m_buttons_area, 1);
 
     master_layout->setAlignment(Qt::AlignTop);
-    this->setCentralWidget(central_widget);
-
+    this->setCentralWidget(central_widget);    
 }
 
 
 void RadialGauge::create_cpu_gauge()
 {
     // CPU gauge
-    m_cpu_gauge = new AnalogGauge(-180, 2.6, "./gauge0.png", this);
+    m_cpu_gauge = new AnalogGauge(-132.5, 2.65, "./gauge0c.png", this);
     m_cpu_gauge->setMinimumSize(WIDTH, WIDTH);
     // add gauge object to layout
     m_gauges_area->addWidget(m_cpu_gauge);
@@ -130,7 +155,7 @@ void RadialGauge::create_memory_gauge()
 {
 
     // memory gauge
-    m_memory_gauge = new AnalogGauge(-155, 3.0, "./gauge3.jpg", this);
+    m_memory_gauge = new AnalogGauge(-153, 3.05, "./gauge3a.png", this);
     m_memory_gauge->setMinimumSize(WIDTH, WIDTH);
     // add gauge object to layout
     m_gauges_area->addWidget(m_memory_gauge);
@@ -152,8 +177,9 @@ void RadialGauge::create_memory_gauge()
 
 void RadialGauge::create_disk_gauge()
 {
-    m_disk_gauge = new AnalogGauge(-135, 2.6, "./gauge4.jpg", this);
+    m_disk_gauge = new AnalogGauge(-135, 2.6, "./gauge0c.png", this);
     m_disk_gauge->setMinimumSize(WIDTH, WIDTH);
+
     // add gauge object to layout
     m_gauges_area->addWidget(m_disk_gauge);
 
@@ -171,7 +197,7 @@ void RadialGauge::create_disk_gauge()
             // limit the needle so it doesn't go crazy at very high values
             double clamped = std::min(mb_per_sec, end_point);
 
-            qDebug() << "DISK SPEED in MB: " << clamped;
+           // qDebug() << "DISK SPEED in MB: " << clamped;
 
             if (!m_pause)
             {
@@ -184,27 +210,33 @@ void RadialGauge::create_disk_gauge()
 
 void RadialGauge::connect_button_signals()
 { 
-   // connect the slider from the "stage" class to the "gauge" class method that sets speed 
-   connect(m_main_slider1, &QSlider::valueChanged, this, [this](int value){ m_cpu_gauge->set_speed(value); });
-   
+  
 
-   connect(m_main_button, &QPushButton::clicked, this, [this](int value)
-       {
-           m_main_button->setEnabled(false);
-           m_pause = true;
-           m_cpu_gauge->move_needle(); 
-           m_memory_gauge->move_needle();
-           m_disk_gauge->move_needle();
+   connect(m_demo_button, &QPushButton::clicked, this, [this](int value) { run_demo_mode();} );  
 
-           QTimer::singleShot( 2000, this, [this]() 
-               { 
-                m_main_button->setEnabled(true);
-                m_pause = false; 
-               } 
-           );
-       });  
+   connect(m_close_button, &QPushButton::clicked, this, &QMainWindow::close);
 
 }
+
+
+void RadialGauge::run_demo_mode()
+{
+    m_demo_button->setEnabled(false);
+    m_pause = true;
+    m_cpu_gauge->move_needle();
+    m_memory_gauge->move_needle();
+    m_disk_gauge->move_needle();
+
+    QTimer::singleShot(2000, this, [this]()
+        {
+            m_demo_button->setEnabled(true);
+            m_pause = false;
+        }
+    );
+}
+
+
+
 
 
 
@@ -240,10 +272,10 @@ void AnalogGauge::paintEvent(QPaintEvent* event)
     painter.rotate(m_current_angle);         // rotate coordinate system
 
     // needle is drawn in transformed coordinates
-    //painter.drawImage((-m_needle_width / 2), -m_needle_height + fudge, m_needle);
+    painter.drawImage((-m_needle_width / 2), -m_needle_height + fudge, m_needle);
 
-    painter.setBrush(Qt::red);
-    painter.drawEllipse(QPoint(0, 0 - fudge), arrow_width, arrow_length);
+   /* painter.setBrush(Qt::red);
+    painter.drawEllipse(QPoint(0, 0 - fudge), arrow_width, arrow_length);*/
 
     painter.setBrush(Qt::black);
     painter.drawEllipse(QPoint(0, 0), cover_cap_radius, cover_cap_radius);
@@ -254,8 +286,8 @@ void AnalogGauge::paintEvent(QPaintEvent* event)
 void AnalogGauge::set_needle_pivot()
 {
     
-    m_needle.load("./speed_arrow.png");
-    //m_needle = m_needle.scaledToHeight(100, Qt::SmoothTransformation);
+    m_needle.load("./gauge_arrow.png");
+    m_needle = m_needle.scaledToHeight(WIDTH * 0.5, Qt::SmoothTransformation);
 
     // needle pivot is set at the center of the circle
     m_gauge_center_x = WIDTH / 2;
@@ -345,7 +377,8 @@ void AnalogGauge::load_bg(const QString& bg)
 
 
 
-
+// MONITOR CLASS
+// 
 // system monitor class uses the Pdh header
 // Declare a query - PDH_HQUERY my_query;
 // Open the query - PdhCollectQueryData(my_query);

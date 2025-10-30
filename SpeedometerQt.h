@@ -29,6 +29,12 @@ public slots:
     void create_memory_gauge();
 
     void create_disk_gauge();
+
+    void run_demo_mode();
+
+    void create_close_button();
+
+    void create_demo_button();
     
 public:
     RadialGauge(QWidget* parent = nullptr);
@@ -48,7 +54,8 @@ private:
 
     QSlider* m_main_slider1;    
 
-    QPushButton* m_main_button;
+    QPushButton* m_demo_button;
+    QPushButton* m_close_button;
     AnalogGauge* m_cpu_gauge;  
     AnalogGauge* m_memory_gauge; 
     AnalogGauge* m_disk_gauge; 
