@@ -13,6 +13,7 @@ class QVBoxLayout;
 class QTimer;
 class SystemMonitor;
 class QPoint;
+class QLabel;
 
 
 class RadialGauge : public QMainWindow
@@ -39,7 +40,9 @@ public slots:
 public:
     RadialGauge(QWidget* parent = nullptr);
     ~RadialGauge();    
-    void build_UI();  
+    void build_UI();
+
+    void create_cpu_number_output_label();    
 
 protected:
     void mousePressEvent(QMouseEvent* event) override;
@@ -50,6 +53,7 @@ private:
     QHBoxLayout* m_gauges_area;
     QHBoxLayout* m_buttons_area;
     QTimer* m_timer;
+    QLabel* m_cpu_load_number;
     QPoint m_drag_position;
 
     QSlider* m_main_slider1;    
@@ -59,11 +63,13 @@ private:
     AnalogGauge* m_cpu_gauge;  
     AnalogGauge* m_memory_gauge; 
     AnalogGauge* m_disk_gauge; 
+
+    QWidget* m_click_area;
     
 
     double m_last_good_cpu_value = 1.0;
 
-    bool m_pause = false;
+    bool m_paused = false;
 };
 
 
@@ -79,6 +85,7 @@ private:
 
     QImage m_background;
     QImage m_needle;
+
 
     int m_gauge_center_x;
     int m_gauge_center_y;
@@ -104,7 +111,7 @@ public:
 
     double map_speed_to_angle(int speed);
 
-    const double get_gauge_end_position() { return m_end_position; }
+    double get_gauge_end_position() const { return m_end_position; }
 
     void move_needle();   
 

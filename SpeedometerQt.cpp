@@ -10,6 +10,7 @@
 #include <QTimer>
 #include <QMouseEvent>
 #include <QPoint>
+#include <QLabel>
 
 
 int WIDTH = 220;
@@ -31,7 +32,7 @@ RadialGauge::RadialGauge(QWidget* parent)
     setWindowFlags(windowFlags() | Qt::WindowStaysOnTopHint);
 
     setAttribute(Qt::WA_TranslucentBackground);
-    setStyleSheet("background:transparent;");
+    //setStyleSheet("background:transparent;");
 
     run_demo_mode();
 }
@@ -41,11 +42,36 @@ RadialGauge::~RadialGauge()
 
 void RadialGauge::create_close_button()
 {
-    // main_widget and gauges_layout have different dimensions - use size constants to position buttons
+    
 
-    m_close_button = new QPushButton("X", this);
+    // transparent widget for enforcing click area on transparent buttons. Otherwise Qt event pass through the transparent part.
+    //m_click_area = new QWidget(this);
+    //m_click_area->setFixedSize(width() * 0.05, height() * 0.06);  // Larger than the X
+    //m_click_area->setStyleSheet("background: transparent;");
+
+    // main_widget and gauges_layout have different dimensions - use size constants to position buttons
+    m_close_button = new QPushButton("Exit", this);
     m_close_button->setFixedSize(width() * 0.05, height() * 0.06);
-    m_close_button->move(WIDTH * 3 - m_close_button->width() + 20, 10);
+    //m_close_button->move(WIDTH * 2 - m_close_button->width() + 20, 10);// top-right
+    m_close_button->move(WIDTH * 0.5 - m_close_button->width() * 0.2, HEIGHT * 0.15);
+
+    m_close_button->setStyleSheet(
+        "QPushButton {"
+        "   background: transparent;"
+        "   color: white;"
+        "   border: 1px solid rgba(255,255,255,0.3);"
+        "   border-radius: 3px;"
+        "}"
+        "QPushButton:hover {"
+        "   background: rgba(255,255,255,0.1);"  // hover glow
+        "}"
+    );    
+
+    //m_click_area->move(m_close_button->pos() - QPoint(0, 0));
+
+    // Forward clicks to the actual button
+    //connect(m_click_area, &QWidget::customContextMenuRequested, [this]() { qDebug() << "X AREA CLICKED"; });
+    
 }
 
 
@@ -59,7 +85,20 @@ void RadialGauge::create_demo_button()
 
     
     //m_demo_button->move(m_demo_button->width() - m_demo_button->width() * 0.7, 10);// top-right   
-    m_demo_button->move(WIDTH * 0.5 - m_demo_button->width() * 0.4, 40);  // upper middle of the first gauge 
+    m_demo_button->move(WIDTH * 0.5 - m_demo_button->width() * 0.35, HEIGHT * 0.8);  // upper middle of the first gauge 
+
+
+    m_demo_button->setStyleSheet(
+        "QPushButton {"
+        "   background: transparent;"
+        "   color: white;"
+        "   border: 1px solid rgba(255,255,255,0.3);"
+        "   border-radius: 3px;"
+        "}"
+        "QPushButton:hover {"
+        "   background: rgba(255,255,255,0.1);"  // hover glow
+        "}"
+    );
    
 }
 
@@ -100,17 +139,19 @@ void RadialGauge::build_UI()
     m_system_monitor = new SystemMonitor(this);
     m_timer = new QTimer(this);
 
+    create_cpu_number_output_label();
+
     create_cpu_gauge();
 
     create_memory_gauge();
 
-    create_disk_gauge();
+    //create_disk_gauge();
 
     create_close_button();
     create_demo_button();
     
 
-    m_timer->start(100); // Update every n milliseconds      
+    m_timer->start(80); // Update every n milliseconds      
 
     master_layout->addLayout(m_gauges_area);
     //master_layout->addLayout(m_buttons_area, 1);
@@ -119,11 +160,20 @@ void RadialGauge::build_UI()
     this->setCentralWidget(central_widget);    
 }
 
+void RadialGauge::create_cpu_number_output_label()
+{
+    // number output
+    m_cpu_load_number = new QLabel("0", this);
+    m_cpu_load_number->move(WIDTH * 0.28 + m_cpu_load_number->width()/2, HEIGHT * 0.32);
+    QFont font = m_cpu_load_number->font();  // get current font
+    font.setPointSize(24);           // set new size (in points)
+    m_cpu_load_number->setFont(font);        // apply it back
+}
 
 void RadialGauge::create_cpu_gauge()
 {
     // CPU gauge
-    m_cpu_gauge = new AnalogGauge(-132.5, 2.65, "./gauge0c.png", this);
+    m_cpu_gauge = new AnalogGauge(-132.5, 2.65, "./gauge_cpu.png", this);
     m_cpu_gauge->setMinimumSize(WIDTH, WIDTH);
     // add gauge object to layout
     m_gauges_area->addWidget(m_cpu_gauge);
@@ -141,9 +191,13 @@ void RadialGauge::create_cpu_gauge()
             else m_last_good_cpu_value = cpu;
 
 
-            if (!m_pause)
+            if (!m_paused)
             {
                 m_cpu_gauge->set_speed(cpu);
+
+                QString value_as_string = QString::number(cpu, 'f', 0);
+                
+                m_cpu_load_number->setText(value_as_string);
             }
 
         });
@@ -155,7 +209,7 @@ void RadialGauge::create_memory_gauge()
 {
 
     // memory gauge
-    m_memory_gauge = new AnalogGauge(-153, 3.05, "./gauge3a.png", this);
+    m_memory_gauge = new AnalogGauge(-153, 3.05, "./gauge_ram.png", this);
     m_memory_gauge->setMinimumSize(WIDTH, WIDTH);
     // add gauge object to layout
     m_gauges_area->addWidget(m_memory_gauge);
@@ -166,7 +220,7 @@ void RadialGauge::create_memory_gauge()
 
             qDebug() << "MEMORY % USED: " << m_system_monitor->get_memory_usage();
 
-            if (!m_pause)
+            if (!m_paused)
             {
                 m_memory_gauge->set_speed(mem_perc_used);
             }
@@ -174,7 +228,7 @@ void RadialGauge::create_memory_gauge()
 
 }
 
-
+// not in use
 void RadialGauge::create_disk_gauge()
 {
     m_disk_gauge = new AnalogGauge(-135, 2.6, "./gauge0c.png", this);
@@ -199,7 +253,7 @@ void RadialGauge::create_disk_gauge()
 
            // qDebug() << "DISK SPEED in MB: " << clamped;
 
-            if (!m_pause)
+            if (!m_paused)
             {
                 m_disk_gauge->set_speed(mb_per_sec);
             }
@@ -222,15 +276,16 @@ void RadialGauge::connect_button_signals()
 void RadialGauge::run_demo_mode()
 {
     m_demo_button->setEnabled(false);
-    m_pause = true;
+    
     m_cpu_gauge->move_needle();
     m_memory_gauge->move_needle();
-    m_disk_gauge->move_needle();
+    //m_disk_gauge->move_needle();
+    m_paused = true;
 
-    QTimer::singleShot(2000, this, [this]()
+    QTimer::singleShot(2200, this, [this]()
         {
             m_demo_button->setEnabled(true);
-            m_pause = false;
+            m_paused = false;
         }
     );
 }
@@ -323,20 +378,17 @@ void AnalogGauge::move_needle()
     QSequentialAnimationGroup* group = new QSequentialAnimationGroup(this);
 
     QPropertyAnimation* sweep = new QPropertyAnimation(this, "current_angle");
-    int duration = 1000;
-
-    
+    int animation_duration = 1000;    
 
     int pause_duration = 100;
     
-    sweep->setDuration(duration); // animation length in miliseconds
-    sweep->setStartValue(m_current_angle); // starting angle sets the direction
+    sweep->setDuration(animation_duration); // animation length in miliseconds
+    sweep->setStartValue(m_current_angle); // starting angle 
 
-    if (m_end_position > 0) // prevents weird behavior if the arrow is set to rotate counter clock-wise
-    {
-        sweep->setKeyValueAt(0.7, 100);  // overshoot
-    }
-    
+    //if (m_end_position > 0) // prevents weird behavior if the arrow is set to rotate counter clock-wise
+    //{
+    //    sweep->setKeyValueAt(0.7, 100);  // overshoot
+    //}    
 
     sweep->setKeyValueAt(1, m_end_position);     // settle
     sweep->setEasingCurve(QEasingCurve::OutCubic);  // Smooth deceleration into settle
@@ -344,7 +396,7 @@ void AnalogGauge::move_needle()
     // Return to start  
     QPropertyAnimation* retreat = new QPropertyAnimation(this, "current_angle");
     retreat->setEasingCurve(QEasingCurve::InOutQuad);
-    retreat->setDuration(duration);
+    retreat->setDuration(animation_duration);
     retreat->setStartValue(m_end_position);
     retreat->setEndValue(m_current_angle);
 
@@ -359,9 +411,8 @@ void AnalogGauge::move_needle()
 // this is for the animation macro system from the header
 void AnalogGauge::set_current_angle(double angle)
 {
-    if (m_current_angle != angle) 
-    { 
-        // check if the value actually changed
+    if (m_current_angle != angle) // check if the value actually changed
+    {         
         m_current_angle = angle;
         update(); // tells Qt to repaint the widget
 
@@ -396,11 +447,9 @@ SystemMonitor::SystemMonitor(QObject* parent): QObject(parent), m_smooth_cpu(0.0
     PdhAddCounter(m_memory_query, L"\\Memory\\Available MBytes", 0, &m_memory_counter);
 
     PdhOpenQuery(NULL, 0, &m_disk_query);
-    PdhAddCounter(m_disk_query, L"\\PhysicalDisk(_Total)\\Disk Read Bytes/sec", 0, &m_disk_counter);
+    PdhAddCounter(m_disk_query, L"\\PhysicalDisk(_Total)\\Disk Read Bytes/sec", 0, &m_disk_counter);// does not show anything useful
 
-    // these don't show anything
-    //PdhAddCounter(m_disk_query, L"\\LogicalDisk(_Total)\\Disk Read Bytes / sec", 0, &m_disk_counter);
-    //PdhAddCounter(m_disk_query, L"\\LogicalDisk(C:)\\Disk Read Bytes / sec", 0, &m_disk_counter);
+    
 }
 
 SystemMonitor::~SystemMonitor()
