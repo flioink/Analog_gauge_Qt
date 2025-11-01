@@ -14,6 +14,8 @@ class QTimer;
 class SystemMonitor;
 class QPoint;
 class QLabel;
+class QFont;
+class QGraphicsDropShadowEffect;
 
 
 class RadialGauge : public QMainWindow
@@ -26,6 +28,8 @@ class RadialGauge : public QMainWindow
 public slots:
     void connect_button_signals();
     void create_cpu_gauge();
+
+    void set_label_color(int n);
 
     void create_memory_gauge();
 
@@ -56,7 +60,7 @@ private:
     QLabel* m_cpu_load_number;
     QPoint m_drag_position;
 
-    QSlider* m_main_slider1;    
+    QGraphicsDropShadowEffect* m_outline;
 
     QPushButton* m_demo_button;
     QPushButton* m_close_button;
@@ -65,11 +69,12 @@ private:
     AnalogGauge* m_disk_gauge; 
 
     QWidget* m_click_area;
+    QFont* m_font;
     
 
     double m_last_good_cpu_value = 1.0;
 
-    bool m_paused = false;
+    bool m_paused = true;
 };
 
 
@@ -97,8 +102,7 @@ private:
     double m_current_angle;
     double m_remap_value;
 
-    double m_end_position;      
-    
+    double m_end_position;     
 
 public:
     AnalogGauge(double needle_start_pos, double max_range, QString bg, QWidget* parent = nullptr); // max_range is about 3.6 for 360 degree rotation
@@ -123,9 +127,7 @@ public:
     void load_bg(const QString& bg);
 
 signals:
-    void current_angle_changed(double new_angle);
-
-    
+    void current_angle_changed(double new_angle);    
     void animation_started();
     void animation_finished();
 

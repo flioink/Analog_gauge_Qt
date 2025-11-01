@@ -11,16 +11,21 @@
 #include <QMouseEvent>
 #include <QPoint>
 #include <QLabel>
+#include <QFontDatabase>
+
+#include <QGraphicsDropShadowEffect>
 
 
-int WIDTH = 220;
+int WIDTH = 250;
 int HEIGHT = WIDTH;
 
 
 
 RadialGauge::RadialGauge(QWidget* parent)
     : QMainWindow(parent)
-{           
+{ 
+
+    setWindowIcon(QIcon("gauge_icon.png"));
     build_UI();
    
     setWindowFlags(Qt::FramelessWindowHint);
@@ -42,13 +47,7 @@ RadialGauge::~RadialGauge()
 
 void RadialGauge::create_close_button()
 {
-    
-
-    // transparent widget for enforcing click area on transparent buttons. Otherwise Qt event pass through the transparent part.
-    //m_click_area = new QWidget(this);
-    //m_click_area->setFixedSize(width() * 0.05, height() * 0.06);  // Larger than the X
-    //m_click_area->setStyleSheet("background: transparent;");
-
+   
     // main_widget and gauges_layout have different dimensions - use size constants to position buttons
     m_close_button = new QPushButton("Exit", this);
     m_close_button->setFixedSize(width() * 0.05, height() * 0.06);
@@ -67,11 +66,7 @@ void RadialGauge::create_close_button()
         "}"
     );    
 
-    //m_click_area->move(m_close_button->pos() - QPoint(0, 0));
-
-    // Forward clicks to the actual button
-    //connect(m_click_area, &QWidget::customContextMenuRequested, [this]() { qDebug() << "X AREA CLICKED"; });
-    
+        
 }
 
 
@@ -162,12 +157,32 @@ void RadialGauge::build_UI()
 
 void RadialGauge::create_cpu_number_output_label()
 {
-    // number output
-    m_cpu_load_number = new QLabel("0", this);
-    m_cpu_load_number->move(WIDTH * 0.28 + m_cpu_load_number->width()/2, HEIGHT * 0.32);
-    QFont font = m_cpu_load_number->font();  // get current font
-    font.setPointSize(24);           // set new size (in points)
-    m_cpu_load_number->setFont(font);        // apply it back
+    // number output    
+
+    int id = QFontDatabase::addApplicationFont("./digital-7 (mono).ttf");  // load the font
+    QString family = QFontDatabase::applicationFontFamilies(id).at(0);
+
+    m_cpu_load_number = new QLabel(this);
+    m_font = new QFont(family, 24, QFont::Bold);  // name, size
+    m_cpu_load_number->setFont(*m_font); 
+    //m_cpu_load_number->setText("000%");
+    m_cpu_load_number->adjustSize();
+    //m_font->setFixedPitch(true);
+    m_cpu_load_number->move(WIDTH * 0.41, HEIGHT * 0.32);
+
+    m_outline = new QGraphicsDropShadowEffect(this);
+    m_outline->setBlurRadius(2);               // blur
+    m_outline->setColor(QColor(0, 0, 0, 180)); // outline color
+    m_outline->setOffset(3, 3);                // shadow offset
+    m_outline->setXOffset(3);
+    m_outline->setYOffset(3);
+    m_cpu_load_number->setGraphicsEffect(m_outline);
+
+    m_cpu_load_number->setStyleSheet("color: white;");
+    
+
+    qDebug() << QFontDatabase().families();
+    
 }
 
 void RadialGauge::create_cpu_gauge()
@@ -182,7 +197,7 @@ void RadialGauge::create_cpu_gauge()
     connect(m_timer, &QTimer::timeout, this, [this]()
         {
             double cpu = m_system_monitor->get_cpu_usage();
-            qDebug() << "CURRENT CPU LOAD: " << cpu;
+            //qDebug() << "CURRENT CPU LOAD: " << cpu;
 
             if (cpu < 1)
             {
@@ -193,15 +208,30 @@ void RadialGauge::create_cpu_gauge()
 
             if (!m_paused)
             {
-                m_cpu_gauge->set_speed(cpu);
+                m_cpu_gauge->set_speed(cpu);               
 
-                QString value_as_string = QString::number(cpu, 'f', 0);
+                int num = int(std::ceil(cpu));
+
+                set_label_color(num);
+
+                QString value_as_string = QString("%1").arg(num, 3, 10, QChar('0'));
                 
-                m_cpu_load_number->setText(value_as_string);
+                m_cpu_load_number->setText(QString("%1%").arg(value_as_string));
+                m_cpu_load_number->adjustSize();
+                m_font->setFixedPitch(true);
             }
+
+                             
 
         });
 
+}
+
+void RadialGauge::set_label_color(int n)
+{
+    if (n < 40) m_cpu_load_number->setStyleSheet("color: #27C8F5;");
+    else if (n < 80) m_cpu_load_number->setStyleSheet("color: #FFA000;");
+    else m_cpu_load_number->setStyleSheet("color: red;");
 }
 
 
@@ -213,12 +243,12 @@ void RadialGauge::create_memory_gauge()
     m_memory_gauge->setMinimumSize(WIDTH, WIDTH);
     // add gauge object to layout
     m_gauges_area->addWidget(m_memory_gauge);
-
+    
     connect(m_timer, &QTimer::timeout, this, [this]()
         {
             auto mem_perc_used = m_system_monitor->get_memory_usage();
 
-            qDebug() << "MEMORY % USED: " << m_system_monitor->get_memory_usage();
+            //qDebug() << "MEMORY % USED: " << m_system_monitor->get_memory_usage();
 
             if (!m_paused)
             {
@@ -327,6 +357,7 @@ void AnalogGauge::paintEvent(QPaintEvent* event)
     painter.rotate(m_current_angle);         // rotate coordinate system
 
     // needle is drawn in transformed coordinates
+    
     painter.drawImage((-m_needle_width / 2), -m_needle_height + fudge, m_needle);
 
    /* painter.setBrush(Qt::red);
@@ -334,6 +365,8 @@ void AnalogGauge::paintEvent(QPaintEvent* event)
 
     painter.setBrush(Qt::black);
     painter.drawEllipse(QPoint(0, 0), cover_cap_radius, cover_cap_radius);
+
+    
 
     
 }
@@ -405,7 +438,7 @@ void AnalogGauge::move_needle()
     group->addAnimation(retreat);
     group->start(QAbstractAnimation::DeleteWhenStopped); // clean up when done
 
-    
+    qDebug() << "VALUE of angle at the end of anim: " << m_current_angle;
 }
 
 // this is for the animation macro system from the header
