@@ -16,7 +16,7 @@
 #include <QGraphicsDropShadowEffect>
 
 
-int WIDTH = 250;
+int WIDTH = 225;
 int HEIGHT = WIDTH;
 
 
@@ -50,9 +50,9 @@ void RadialGauge::create_close_button()
    
     // main_widget and gauges_layout have different dimensions - use size constants to position buttons
     m_close_button = new QPushButton("Exit", this);
-    m_close_button->setFixedSize(width() * 0.05, height() * 0.06);
+    m_close_button->setFixedSize(width() * 0.05, height() * 0.04);
     //m_close_button->move(WIDTH * 2 - m_close_button->width() + 20, 10);// top-right
-    m_close_button->move(WIDTH * 0.5 - m_close_button->width() * 0.2, HEIGHT * 0.15);
+    m_close_button->move(WIDTH * 0.5 - m_close_button->width() * 0.2, HEIGHT * 0.3);
 
     m_close_button->setStyleSheet(
         "QPushButton {"
@@ -76,11 +76,11 @@ void RadialGauge::create_demo_button()
     m_demo_button = new QPushButton("Demo", this);
 
     // size as percentage of window
-    m_demo_button->setFixedSize(width() * 0.1, height() * 0.06); 
+    m_demo_button->setFixedSize(width() * 0.07, height() * 0.04); 
 
     
     //m_demo_button->move(m_demo_button->width() - m_demo_button->width() * 0.7, 10);// top-right   
-    m_demo_button->move(WIDTH * 0.5 - m_demo_button->width() * 0.35, HEIGHT * 0.8);  // upper middle of the first gauge 
+    m_demo_button->move(WIDTH * 0.5 - m_demo_button->width() * 0.35, HEIGHT * 0.80);  // upper middle of the first gauge 
 
 
     m_demo_button->setStyleSheet(
@@ -163,16 +163,16 @@ void RadialGauge::create_cpu_number_output_label()
     QString family = QFontDatabase::applicationFontFamilies(id).at(0);
 
     m_cpu_load_number = new QLabel(this);
-    m_font = new QFont(family, 24, QFont::Bold);  // name, size
+    m_font = new QFont(family, 26, QFont::Bold);  // name, size
     m_cpu_load_number->setFont(*m_font); 
     //m_cpu_load_number->setText("000%");
     m_cpu_load_number->adjustSize();
     //m_font->setFixedPitch(true);
-    m_cpu_load_number->move(WIDTH * 0.41, HEIGHT * 0.32);
+    m_cpu_load_number->move(WIDTH * 0.39, HEIGHT * 0.65);
 
     m_outline = new QGraphicsDropShadowEffect(this);
     m_outline->setBlurRadius(2);               // blur
-    m_outline->setColor(QColor(0, 0, 0, 180)); // outline color
+    m_outline->setColor(QColor(0, 0, 0, 128)); // outline color
     m_outline->setOffset(3, 3);                // shadow offset
     m_outline->setXOffset(3);
     m_outline->setYOffset(3);
@@ -188,7 +188,7 @@ void RadialGauge::create_cpu_number_output_label()
 void RadialGauge::create_cpu_gauge()
 {
     // CPU gauge
-    m_cpu_gauge = new AnalogGauge(-132.5, 2.65, "./gauge_cpu.png", this);
+    m_cpu_gauge = new AnalogGauge(-110.0, 2.20, "./gauge_cpu.png", this);
     m_cpu_gauge->setMinimumSize(WIDTH, WIDTH);
     // add gauge object to layout
     m_gauges_area->addWidget(m_cpu_gauge);
@@ -315,11 +315,19 @@ void RadialGauge::run_demo_mode()
     QTimer::singleShot(2200, this, [this]()
         {
             m_demo_button->setEnabled(true);
-            m_paused = false;
+            double cpu = m_system_monitor->get_cpu_usage();
+            double mem = m_system_monitor->get_memory_usage();
+
+            m_cpu_gauge->animate_to(cpu);
+            m_memory_gauge->animate_to(mem);
+
+            QTimer::singleShot(500, this, [this]() 
+                {
+                    m_paused = false;
+                });
         }
     );
 }
-
 
 
 
@@ -331,7 +339,7 @@ int arrow_width = WIDTH * 0.015;
 int cover_cap_radius = WIDTH * 0.04;
 
 
-// Gauge class
+// GAUGE CLASS
 
 AnalogGauge::AnalogGauge(double needle_start_pos, double max_range, QString bg, QWidget* parent):
     m_current_angle(needle_start_pos), m_rotation_range(max_range), m_remap_value(needle_start_pos)
@@ -440,6 +448,23 @@ void AnalogGauge::move_needle()
 
     qDebug() << "VALUE of angle at the end of anim: " << m_current_angle;
 }
+
+
+void AnalogGauge::animate_to(double target_value)
+{
+    double target_angle = map_speed_to_angle(target_value);
+
+    QPropertyAnimation* anim = new QPropertyAnimation(this, "current_angle");
+
+    anim->setDuration(800);
+    anim->setStartValue(m_current_angle);
+    anim->setEndValue(target_angle);
+    anim->setEasingCurve(QEasingCurve::OutCubic);
+
+    anim->start(QAbstractAnimation::DeleteWhenStopped);
+}
+
+
 
 // this is for the animation macro system from the header
 void AnalogGauge::set_current_angle(double angle)

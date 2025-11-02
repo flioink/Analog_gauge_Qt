@@ -35,7 +35,7 @@ public slots:
 
     void create_disk_gauge();
 
-    void run_demo_mode();
+    void run_demo_mode();    
 
     void create_close_button();
 
@@ -60,16 +60,15 @@ private:
     QLabel* m_cpu_load_number;
     QPoint m_drag_position;
 
+    QFont* m_font;
     QGraphicsDropShadowEffect* m_outline;
 
     QPushButton* m_demo_button;
     QPushButton* m_close_button;
     AnalogGauge* m_cpu_gauge;  
     AnalogGauge* m_memory_gauge; 
-    AnalogGauge* m_disk_gauge; 
-
-    QWidget* m_click_area;
-    QFont* m_font;
+    AnalogGauge* m_disk_gauge;    
+   
     
 
     double m_last_good_cpu_value = 1.0;
@@ -117,7 +116,9 @@ public:
 
     double get_gauge_end_position() const { return m_end_position; }
 
-    void move_needle();   
+    void move_needle();
+
+    void animate_to(double target_value);//
 
     // for the animation
     double get_current_angle() const { return m_current_angle; }
