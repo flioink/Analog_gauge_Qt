@@ -15,6 +15,7 @@ class SystemMonitor;
 class QPoint;
 class QLabel;
 class QFont;
+class QPoint;
 class QGraphicsDropShadowEffect;
 
 
@@ -33,7 +34,7 @@ public slots:
 
     void create_memory_gauge();
 
-    void create_disk_gauge();
+    //void create_disk_gauge();
 
     void run_demo_mode();    
 
@@ -90,6 +91,10 @@ private:
     QImage m_background;
     QImage m_needle;
 
+    QLabel* m_self_description_label;
+
+    QString m_self_description_text;
+    QPoint m_self_description_position;
 
     int m_gauge_center_x;
     int m_gauge_center_y;
@@ -104,7 +109,9 @@ private:
     double m_end_position;     
 
 public:
-    AnalogGauge(double needle_start_pos, double max_range, QString bg, QWidget* parent = nullptr); // max_range is about 3.6 for 360 degree rotation
+    AnalogGauge(double needle_start_pos, double max_range, const QString& bg, const QString& label_text, QPoint label_pos, QWidget* parent); // max_range is about 3.6 for 360 degree rotation
+
+    void show_description_label();
 
     void paintEvent(QPaintEvent* event) override;
 

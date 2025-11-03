@@ -19,6 +19,8 @@
 int WIDTH = 225;
 int HEIGHT = WIDTH;
 
+int descr_label_pos_y = HEIGHT * 0.76;
+
 
 
 RadialGauge::RadialGauge(QWidget* parent)
@@ -52,7 +54,7 @@ void RadialGauge::create_close_button()
     m_close_button = new QPushButton("Exit", this);
     m_close_button->setFixedSize(width() * 0.05, height() * 0.04);
     //m_close_button->move(WIDTH * 2 - m_close_button->width() + 20, 10);// top-right
-    m_close_button->move(WIDTH * 0.5 - m_close_button->width() * 0.2, HEIGHT * 0.30);
+    m_close_button->move(WIDTH * 0.5 - m_close_button->width() * 0.2, HEIGHT * 0.3);
 
     m_close_button->setStyleSheet(
         "QPushButton {"
@@ -80,7 +82,7 @@ void RadialGauge::create_demo_button()
 
     
     //m_demo_button->move(m_demo_button->width() - m_demo_button->width() * 0.7, 10);// top-right   
-    m_demo_button->move(WIDTH * 0.5 - m_demo_button->width() * 0.30, HEIGHT * 0.82);  // upper middle of the first gauge 
+    m_demo_button->move(WIDTH * 0.5 - m_demo_button->width() * 0.30, HEIGHT * 0.4);  // upper middle of the first gauge 
 
 
     m_demo_button->setStyleSheet(
@@ -138,9 +140,7 @@ void RadialGauge::build_UI()
 
     create_cpu_gauge();
 
-    create_memory_gauge();
-
-    //create_disk_gauge();
+    create_memory_gauge(); 
 
     create_close_button();
     create_demo_button();
@@ -152,7 +152,8 @@ void RadialGauge::build_UI()
     //master_layout->addLayout(m_buttons_area, 1);
 
     master_layout->setAlignment(Qt::AlignTop);
-    this->setCentralWidget(central_widget);    
+    this->setCentralWidget(central_widget);      
+
 }
 
 void RadialGauge::create_cpu_number_output_label()
@@ -163,7 +164,7 @@ void RadialGauge::create_cpu_number_output_label()
     QString family = QFontDatabase::applicationFontFamilies(id).at(0);
 
     m_cpu_load_number = new QLabel(this);
-    m_font = new QFont(family, 26, QFont::Bold);  // name, size
+    m_font = new QFont(family, 24, QFont::Bold);  // name, size
     m_cpu_load_number->setFont(*m_font); 
     //m_cpu_load_number->setText("000%");
     m_cpu_load_number->adjustSize();
@@ -181,14 +182,14 @@ void RadialGauge::create_cpu_number_output_label()
     m_cpu_load_number->setStyleSheet("color: white;");
     
 
-    qDebug() << QFontDatabase().families();
+    //qDebug() << QFontDatabase().families();
     
 }
 
 void RadialGauge::create_cpu_gauge()
 {
     // CPU gauge
-    m_cpu_gauge = new AnalogGauge(-110.0, 2.20, "./gauge_cpu.png", this);
+    m_cpu_gauge = new AnalogGauge(-110.0, 2.20, "./gauge_cpu.png", QString("CPU load"), QPoint(WIDTH * 0.5 - WIDTH * 0.18, descr_label_pos_y), this);
     m_cpu_gauge->setMinimumSize(WIDTH, WIDTH);
     // add gauge object to layout
     m_gauges_area->addWidget(m_cpu_gauge);
@@ -239,7 +240,7 @@ void RadialGauge::create_memory_gauge()
 {
 
     // memory gauge
-    m_memory_gauge = new AnalogGauge(-147.5, 2.98, "./gauge_ram.png", this);
+    m_memory_gauge = new AnalogGauge(-147.5, 2.98, "./gauge_ram.png", QString("RAM%"), QPoint(2*(WIDTH * 0.5 - WIDTH * 0.31), descr_label_pos_y), this);
     m_memory_gauge->setMinimumSize(WIDTH, WIDTH);
     // add gauge object to layout
     m_gauges_area->addWidget(m_memory_gauge);
@@ -258,38 +259,6 @@ void RadialGauge::create_memory_gauge()
 
 }
 
-// not in use
-void RadialGauge::create_disk_gauge()
-{
-    m_disk_gauge = new AnalogGauge(-135, 2.6, "./gauge0c.png", this);
-    m_disk_gauge->setMinimumSize(WIDTH, WIDTH);
-
-    // add gauge object to layout
-    m_gauges_area->addWidget(m_disk_gauge);
-
-    double end_point = m_disk_gauge->get_gauge_end_position(); // this is the gauge end point based on m_end_position = 100 * m_rotation_range + m_remap_value
-
-    connect(m_timer, &QTimer::timeout, this, [this, end_point]()
-        {
-
-            auto disk_speed = m_system_monitor->get_disk_read_speed();
-
-            double mb_per_sec = disk_speed / (1024 * 1024);
-
-            if (mb_per_sec < 0.1) mb_per_sec = 0.0;
-
-            // limit the needle so it doesn't go crazy at very high values
-            double clamped = std::min(mb_per_sec, end_point);
-
-           // qDebug() << "DISK SPEED in MB: " << clamped;
-
-            if (!m_paused)
-            {
-                m_disk_gauge->set_speed(mb_per_sec);
-            }
-        });
-
-}
 
 
 void RadialGauge::connect_button_signals()
@@ -309,7 +278,7 @@ void RadialGauge::run_demo_mode()
     
     m_cpu_gauge->move_needle();
     m_memory_gauge->move_needle();
-    //m_disk_gauge->move_needle();
+    
     m_paused = true;
 
     QTimer::singleShot(2200, this, [this]()
@@ -341,14 +310,39 @@ int cover_cap_radius = WIDTH * 0.04;
 
 // GAUGE CLASS
 
-AnalogGauge::AnalogGauge(double needle_start_pos, double max_range, QString bg, QWidget* parent):
+AnalogGauge::AnalogGauge(double needle_start_pos, double max_range, const QString& bg, const QString& label_text, QPoint label_pos, QWidget* parent):
     m_current_angle(needle_start_pos), m_rotation_range(max_range), m_remap_value(needle_start_pos)
 {   
-    m_end_position = 100 * m_rotation_range + m_remap_value;
+    
 
-    load_background_image(bg);
+    m_end_position = 100 * m_rotation_range + m_remap_value; // have the end position in a variable for the animations
+
+    m_self_description_text = label_text;
+    m_self_description_position = label_pos;
+
+    load_background_image(bg);  
     
     set_needle_pivot();
+
+    show_description_label();
+
+    qDebug() << "Analog constructor";
+}
+
+void AnalogGauge::show_description_label()
+{
+    // test for glow effect
+    m_self_description_label = new QLabel(m_self_description_text, this);
+    m_self_description_label->setStyleSheet("color: white; font-size: 18px; font-weight: bold;"); // for now
+    m_self_description_label->move(m_self_description_position);
+
+    QGraphicsDropShadowEffect* glow = new QGraphicsDropShadowEffect();
+    glow->setBlurRadius(25);
+    glow->setOffset(0);
+    glow->setColor(QColor(0, 255, 255, 200));  // soft cyan glow
+
+    m_self_description_label->setGraphicsEffect(glow);
+    m_self_description_label->show();
 }
 
 void AnalogGauge::paintEvent(QPaintEvent* event)
