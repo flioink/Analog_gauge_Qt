@@ -52,7 +52,7 @@ void RadialGauge::create_close_button()
     m_close_button = new QPushButton("Exit", this);
     m_close_button->setFixedSize(width() * 0.05, height() * 0.04);
     //m_close_button->move(WIDTH * 2 - m_close_button->width() + 20, 10);// top-right
-    m_close_button->move(WIDTH * 0.5 - m_close_button->width() * 0.2, HEIGHT * 0.3);
+    m_close_button->move(WIDTH * 0.5 - m_close_button->width() * 0.2, HEIGHT * 0.30);
 
     m_close_button->setStyleSheet(
         "QPushButton {"
@@ -80,7 +80,7 @@ void RadialGauge::create_demo_button()
 
     
     //m_demo_button->move(m_demo_button->width() - m_demo_button->width() * 0.7, 10);// top-right   
-    m_demo_button->move(WIDTH * 0.5 - m_demo_button->width() * 0.35, HEIGHT * 0.80);  // upper middle of the first gauge 
+    m_demo_button->move(WIDTH * 0.5 - m_demo_button->width() * 0.30, HEIGHT * 0.82);  // upper middle of the first gauge 
 
 
     m_demo_button->setStyleSheet(
@@ -168,7 +168,7 @@ void RadialGauge::create_cpu_number_output_label()
     //m_cpu_load_number->setText("000%");
     m_cpu_load_number->adjustSize();
     //m_font->setFixedPitch(true);
-    m_cpu_load_number->move(WIDTH * 0.39, HEIGHT * 0.65);
+    m_cpu_load_number->move(WIDTH * 0.40, HEIGHT * 0.65);
 
     m_outline = new QGraphicsDropShadowEffect(this);
     m_outline->setBlurRadius(2);               // blur
@@ -239,7 +239,7 @@ void RadialGauge::create_memory_gauge()
 {
 
     // memory gauge
-    m_memory_gauge = new AnalogGauge(-153, 3.05, "./gauge_ram.png", this);
+    m_memory_gauge = new AnalogGauge(-147.5, 2.98, "./gauge_ram.png", this);
     m_memory_gauge->setMinimumSize(WIDTH, WIDTH);
     // add gauge object to layout
     m_gauges_area->addWidget(m_memory_gauge);
@@ -248,7 +248,7 @@ void RadialGauge::create_memory_gauge()
         {
             auto mem_perc_used = m_system_monitor->get_memory_usage();
 
-            //qDebug() << "MEMORY % USED: " << m_system_monitor->get_memory_usage();
+            qDebug() << "MEMORY % USED: " << m_system_monitor->get_memory_usage();
 
             if (!m_paused)
             {
@@ -346,7 +346,7 @@ AnalogGauge::AnalogGauge(double needle_start_pos, double max_range, QString bg, 
 {   
     m_end_position = 100 * m_rotation_range + m_remap_value;
 
-    load_bg(bg);
+    load_background_image(bg);
     
     set_needle_pivot();
 }
@@ -372,11 +372,7 @@ void AnalogGauge::paintEvent(QPaintEvent* event)
     painter.drawEllipse(QPoint(0, 0 - fudge), arrow_width, arrow_length);*/
 
     painter.setBrush(Qt::black);
-    painter.drawEllipse(QPoint(0, 0), cover_cap_radius, cover_cap_radius);
-
-    
-
-    
+    painter.drawEllipse(QPoint(0, 0), cover_cap_radius, cover_cap_radius);    
 }
 
 void AnalogGauge::set_needle_pivot()
@@ -426,10 +422,7 @@ void AnalogGauge::move_needle()
     sweep->setDuration(animation_duration); // animation length in miliseconds
     sweep->setStartValue(m_current_angle); // starting angle 
 
-    //if (m_end_position > 0) // prevents weird behavior if the arrow is set to rotate counter clock-wise
-    //{
-    //    sweep->setKeyValueAt(0.7, 100);  // overshoot
-    //}    
+    
 
     sweep->setKeyValueAt(1, m_end_position);     // settle
     sweep->setEasingCurve(QEasingCurve::OutCubic);  // Smooth deceleration into settle
@@ -446,7 +439,7 @@ void AnalogGauge::move_needle()
     group->addAnimation(retreat);
     group->start(QAbstractAnimation::DeleteWhenStopped); // clean up when done
 
-    qDebug() << "VALUE of angle at the end of anim: " << m_current_angle;
+   
 }
 
 
@@ -479,7 +472,7 @@ void AnalogGauge::set_current_angle(double angle)
 
 }
 
-void AnalogGauge::load_bg(const QString& bg)
+void AnalogGauge::load_background_image(const QString& bg)
 {
     m_background.load(bg);
 }

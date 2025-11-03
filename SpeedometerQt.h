@@ -125,7 +125,7 @@ public:
 
     void set_current_angle(double angle);
 
-    void load_bg(const QString& bg);
+    void load_background_image(const QString& bg);
 
 signals:
     void current_angle_changed(double new_angle);    
