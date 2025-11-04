@@ -1,7 +1,7 @@
 #pragma once
+
 #pragma comment(lib, "Pdh.lib")
 #include <Pdh.h>
-
 #include <QtWidgets/QMainWindow>
 
 class QSlider;
@@ -22,10 +22,7 @@ class QGraphicsDropShadowEffect;
 class RadialGauge : public QMainWindow
 {
     Q_OBJECT
-
-
-    double m_main_slider_value = 0.0;
-
+    
 public slots:
     void connect_button_signals();
     void create_cpu_gauge();
@@ -69,8 +66,6 @@ private:
     AnalogGauge* m_cpu_gauge;  
     AnalogGauge* m_memory_gauge; 
     AnalogGauge* m_disk_gauge;    
-   
-    
 
     double m_last_good_cpu_value = 1.0;
 

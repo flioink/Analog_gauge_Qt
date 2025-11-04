@@ -17,7 +17,7 @@
 
 
 int WIDTH = 225;
-int HEIGHT = WIDTH;
+int HEIGHT = WIDTH; // squared shape
 
 int descr_label_pos_y = HEIGHT * 0.76;
 
@@ -82,7 +82,7 @@ void RadialGauge::create_demo_button()
 
     
     //m_demo_button->move(m_demo_button->width() - m_demo_button->width() * 0.7, 10);// top-right   
-    m_demo_button->move(WIDTH * 0.5 - m_demo_button->width() * 0.30, HEIGHT * 0.4);  // upper middle of the first gauge 
+    m_demo_button->move(WIDTH * 0.5 - m_demo_button->width() * 0.30, HEIGHT * 0.6);  // upper middle of the first gauge 
 
 
     m_demo_button->setStyleSheet(
@@ -169,7 +169,7 @@ void RadialGauge::create_cpu_number_output_label()
     //m_cpu_load_number->setText("000%");
     m_cpu_load_number->adjustSize();
     //m_font->setFixedPitch(true);
-    m_cpu_load_number->move(WIDTH * 0.40, HEIGHT * 0.65);
+    m_cpu_load_number->move(WIDTH * 0.40, HEIGHT * 0.69);
 
     m_outline = new QGraphicsDropShadowEffect(this);
     m_outline->setBlurRadius(2);               // blur
@@ -178,9 +178,7 @@ void RadialGauge::create_cpu_number_output_label()
     m_outline->setXOffset(3);
     m_outline->setYOffset(3);
     m_cpu_load_number->setGraphicsEffect(m_outline);
-
-    m_cpu_load_number->setStyleSheet("color: white;");
-    
+    m_cpu_load_number->setStyleSheet("color: white;");  
 
     //qDebug() << QFontDatabase().families();
     
@@ -189,7 +187,7 @@ void RadialGauge::create_cpu_number_output_label()
 void RadialGauge::create_cpu_gauge()
 {
     // CPU gauge
-    m_cpu_gauge = new AnalogGauge(-110.0, 2.20, "./gauge_cpu.png", QString("CPU load"), QPoint(WIDTH * 0.5 - WIDTH * 0.18, descr_label_pos_y), this);
+    m_cpu_gauge = new AnalogGauge(-110.0, 2.22, "./gauge_cpu.png", QString("CPU LOAD"), QPoint((WIDTH * 0.5) - (WIDTH / 6), descr_label_pos_y + HEIGHT * 0.03), this);
     m_cpu_gauge->setMinimumSize(WIDTH, WIDTH);
     // add gauge object to layout
     m_gauges_area->addWidget(m_cpu_gauge);
@@ -240,7 +238,7 @@ void RadialGauge::create_memory_gauge()
 {
 
     // memory gauge
-    m_memory_gauge = new AnalogGauge(-147.5, 2.98, "./gauge_ram.png", QString("RAM%"), QPoint(2*(WIDTH * 0.5 - WIDTH * 0.31), descr_label_pos_y), this);
+    m_memory_gauge = new AnalogGauge(-149, 2.99, "./gauge_ram.png", QString(" RAM%\n in use"), QPoint((WIDTH * 0.5) - (WIDTH / 10), descr_label_pos_y), this);
     m_memory_gauge->setMinimumSize(WIDTH, WIDTH);
     // add gauge object to layout
     m_gauges_area->addWidget(m_memory_gauge);
@@ -283,7 +281,7 @@ void RadialGauge::run_demo_mode()
 
     QTimer::singleShot(2200, this, [this]()
         {
-            m_demo_button->setEnabled(true);
+            
             double cpu = m_system_monitor->get_cpu_usage();
             double mem = m_system_monitor->get_memory_usage();
 
@@ -293,6 +291,7 @@ void RadialGauge::run_demo_mode()
             QTimer::singleShot(500, this, [this]() 
                 {
                     m_paused = false;
+                    m_demo_button->setEnabled(true);
                 });
         }
     );
@@ -333,13 +332,13 @@ void AnalogGauge::show_description_label()
 {
     // test for glow effect
     m_self_description_label = new QLabel(m_self_description_text, this);
-    m_self_description_label->setStyleSheet("color: white; font-size: 18px; font-weight: bold;"); // for now
+    m_self_description_label->setStyleSheet("color: white; font-size: 14px; font-weight: bold;"); // for now
     m_self_description_label->move(m_self_description_position);
-
+    
     QGraphicsDropShadowEffect* glow = new QGraphicsDropShadowEffect();
     glow->setBlurRadius(25);
     glow->setOffset(0);
-    glow->setColor(QColor(0, 255, 255, 200));  // soft cyan glow
+    glow->setColor(QColor(0, 255, 255, 200));  // glow color
 
     m_self_description_label->setGraphicsEffect(glow);
     m_self_description_label->show();
