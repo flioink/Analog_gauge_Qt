@@ -85,6 +85,7 @@ private:
 
     QImage m_background;
     QImage m_needle;
+    QImage m_needle_cap;
 
     QLabel* m_self_description_label;
 
@@ -96,6 +97,8 @@ private:
 
     int m_needle_width;
     int m_needle_height;   
+    int m_needle_cap_width;   
+    int m_needle_cap_height;   
 
     double m_rotation_range = 2.63; // max angle 
     double m_current_angle;
@@ -104,7 +107,7 @@ private:
     double m_end_position;     
 
 public:
-    AnalogGauge(double needle_start_pos, double max_range, const QString& bg, const QString& label_text, QPoint label_pos, QWidget* parent); // max_range is about 3.6 for 360 degree rotation
+    AnalogGauge(double needle_start_pos, double max_range, const QString& bg, const QString& label_text, QPoint label_pos, QWidget* parent); // max_range is 3.6 for 360 degree rotation
 
     void show_description_label();
 

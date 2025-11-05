@@ -238,7 +238,7 @@ void RadialGauge::create_memory_gauge()
 {
 
     // memory gauge
-    m_memory_gauge = new AnalogGauge(-149, 2.99, "./gauge_ram.png", QString(" RAM%\n in use"), QPoint((WIDTH * 0.5) - (WIDTH / 10), descr_label_pos_y), this);
+    m_memory_gauge = new AnalogGauge(-150, 3.0, "./gauge_ram.png", QString(" RAM%\n in use"), QPoint((WIDTH * 0.5) - (WIDTH / 10), descr_label_pos_y), this);
     m_memory_gauge->setMinimumSize(WIDTH, WIDTH);
     // add gauge object to layout
     m_gauges_area->addWidget(m_memory_gauge);
@@ -291,7 +291,7 @@ void RadialGauge::run_demo_mode()
             QTimer::singleShot(500, this, [this]() 
                 {
                     m_paused = false;
-                    m_demo_button->setEnabled(true);
+                    m_demo_button->setEnabled(true); // re-anable after
                 });
         }
     );
@@ -304,7 +304,7 @@ void RadialGauge::run_demo_mode()
 int fudge = WIDTH * 0.15;
 int arrow_length = WIDTH * 0.16;
 int arrow_width = WIDTH * 0.015;
-int cover_cap_radius = WIDTH * 0.04;
+int cover_cap_radius = WIDTH * 0.1;
 
 
 // GAUGE CLASS
@@ -348,6 +348,7 @@ void AnalogGauge::paintEvent(QPaintEvent* event)
 {
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);
+    painter.setRenderHint(QPainter::SmoothPixmapTransform, true);
    
     // draw background 
     painter.drawImage(rect(), m_background);     
@@ -361,18 +362,25 @@ void AnalogGauge::paintEvent(QPaintEvent* event)
     
     painter.drawImage((-m_needle_width / 2), -m_needle_height + fudge, m_needle);
 
-   /* painter.setBrush(Qt::red);
-    painter.drawEllipse(QPoint(0, 0 - fudge), arrow_width, arrow_length);*/
+   
 
-    painter.setBrush(Qt::black);
-    painter.drawEllipse(QPoint(0, 0), cover_cap_radius, cover_cap_radius);    
+    /*painter.setBrush(Qt::black);
+    painter.drawEllipse(QPoint(0, 0), m_needle_cap_width/2, m_needle_cap_height/2);*/
+
+    painter.drawImage((-m_needle_cap_width / 2), (-m_needle_cap_height / 2), m_needle_cap);
+    
 }
 
 void AnalogGauge::set_needle_pivot()
 {
+    m_needle_cap.load("./gauge_arrow_cap.png");
+    m_needle_cap = m_needle_cap.scaled(cover_cap_radius, cover_cap_radius, Qt::AspectRatioMode::KeepAspectRatio, Qt::SmoothTransformation);
+
+    m_needle_cap_width = m_needle_cap.width();
+    m_needle_cap_height = m_needle_cap.height();
     
     m_needle.load("./gauge_arrow.png");
-    m_needle = m_needle.scaledToHeight(WIDTH * 0.5, Qt::SmoothTransformation);
+    m_needle = m_needle.scaledToHeight(WIDTH * 0.5, Qt::SmoothTransformation);   
 
     // needle pivot is set at the center of the circle
     m_gauge_center_x = WIDTH / 2;
