@@ -16,6 +16,7 @@ class QPoint;
 class QLabel;
 class QFont;
 class QPoint;
+class QCheckBox;
 class QGraphicsDropShadowEffect;
 
 
@@ -38,13 +39,17 @@ public slots:
     void create_close_button();
 
     void create_demo_button();
+
+    void set_always_on_top(bool enabled);
     
 public:
     RadialGauge(QWidget* parent = nullptr);
     ~RadialGauge();    
     void build_UI();
 
-    void create_cpu_number_output_label();    
+    void create_cpu_number_output_label();
+
+    void create_checkbox();
 
 protected:
     void mousePressEvent(QMouseEvent* event) override;
@@ -63,6 +68,8 @@ private:
 
     QPushButton* m_demo_button;
     QPushButton* m_close_button;
+    QCheckBox* m_on_top_checkbox;
+
     AnalogGauge* m_cpu_gauge;  
     AnalogGauge* m_memory_gauge; 
     AnalogGauge* m_disk_gauge;    
@@ -80,7 +87,7 @@ class AnalogGauge : public QWidget
     
     Q_PROPERTY(double current_angle READ get_current_angle WRITE set_current_angle NOTIFY current_angle_changed)
 
-    //         data type property name  getter       setter                   signal
+    //      data type property name      getter                  setter                   signal
 private:
 
     QImage m_background;
@@ -109,7 +116,16 @@ private:
     int m_needle_cap_height;        
 
 public:
-    AnalogGauge(double needle_start_pos, double max_range, const QString& bg, const QString& needle_img, const QString& neddle_cap_img, const QString& label_text, QPoint label_pos, QWidget* parent = nullptr); 
+    AnalogGauge(
+        double needle_start_pos,
+        double max_range,
+        const QString& bg,
+        const QString& needle_img,
+        const QString& neddle_cap_img,
+        const QString& label_text,
+        QPoint label_pos,
+        QWidget* parent = nullptr
+    ); 
     // max_range is 3.6 for 360 degree rotation
 
     void show_description_label();

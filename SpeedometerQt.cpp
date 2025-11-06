@@ -3,6 +3,7 @@
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QPushButton>
+#include <QCheckBox>
 #include <QPainter>
 #include <QDebug>
 #include <QPropertyAnimation>
@@ -18,6 +19,7 @@
 
 
 int WIDTH = 225;
+//int WIDTH = 450;
 int HEIGHT = WIDTH; // squared shape
 
 int descr_label_pos_y = HEIGHT * 0.76;
@@ -57,17 +59,7 @@ void RadialGauge::create_close_button()
     //m_close_button->move(WIDTH * 2 - m_close_button->width() + 20, 10);// top-right
     m_close_button->move(WIDTH * 0.5 - m_close_button->width() * 0.2, HEIGHT * 0.3);
 
-    m_close_button->setStyleSheet(
-        "QPushButton {"
-        "   background: transparent;"
-        "   color: white;"
-        "   border: 1px solid rgba(255,255,255,0.3);"
-        "   border-radius: 3px;"
-        "}"
-        "QPushButton:hover {"
-        "   background: rgba(255,255,255,0.1);"  // hover glow
-        "}"
-    );    
+    m_close_button->setObjectName("close_button");
 
         
 }
@@ -79,24 +71,32 @@ void RadialGauge::create_demo_button()
 
     // size as percentage of window
     m_demo_button->setFixedSize(width() * 0.07, height() * 0.04); 
-
     
     //m_demo_button->move(m_demo_button->width() - m_demo_button->width() * 0.7, 10);// top-right   
     m_demo_button->move(WIDTH * 0.5 - m_demo_button->width() * 0.30, HEIGHT * 0.6);  // upper middle of the first gauge 
 
-
-    m_demo_button->setStyleSheet(
-        "QPushButton {"
-        "   background: transparent;"
-        "   color: white;"
-        "   border: 1px solid rgba(255,255,255,0.3);"
-        "   border-radius: 3px;"
-        "}"
-        "QPushButton:hover {"
-        "   background: rgba(255,255,255,0.1);"  // hover glow
-        "}"
-    );
+    m_demo_button->setObjectName("demo_button");  
    
+}
+
+void RadialGauge::set_always_on_top(bool enabled)
+{
+    Qt::WindowFlags flags = windowFlags();
+
+    // Qt's way of setting the on top flag
+    if (enabled)
+    {
+        flags |= Qt::WindowStaysOnTopHint;
+    }
+
+    else
+    {
+        flags &= ~Qt::WindowStaysOnTopHint;
+    }
+
+    setWindowFlags(flags);
+    show();
+
 }
 
 
@@ -145,6 +145,9 @@ void RadialGauge::build_UI()
 
     create_close_button();
     create_demo_button();
+
+    
+    create_checkbox();
     
 
     m_timer->start(80); // Update every n milliseconds      
@@ -179,11 +182,24 @@ void RadialGauge::create_cpu_number_output_label()
     m_outline->setOffset(3, 3);                // shadow offset
     m_outline->setXOffset(3);
     m_outline->setYOffset(3);
-    m_cpu_load_number->setGraphicsEffect(m_outline);
-    //m_cpu_load_number->setStyleSheet("color: white;");  
+    m_cpu_load_number->setGraphicsEffect(m_outline);    
 
     //qDebug() << QFontDatabase().families();
     
+}
+
+void RadialGauge::create_checkbox()
+{
+    m_on_top_checkbox = new QCheckBox(this);
+
+    m_on_top_checkbox->setChecked(true);;
+
+    m_on_top_checkbox->move(WIDTH / 2 + WIDTH * 0.015, HEIGHT * 0.37);  // upper middle of the first gauge 
+
+    m_on_top_checkbox->setObjectName("on_top_checkbox");
+
+   
+
 }
 
 
@@ -265,6 +281,8 @@ void RadialGauge::connect_button_signals()
 {  
    connect(m_demo_button, &QPushButton::clicked, this, [this](int value) { run_demo_mode();} );  
    connect(m_close_button, &QPushButton::clicked, this, &QMainWindow::close);
+
+   connect(m_on_top_checkbox, &QCheckBox::toggled, this, &RadialGauge::set_always_on_top);
 }
 
 
