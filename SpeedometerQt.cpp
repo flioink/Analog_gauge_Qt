@@ -12,8 +12,9 @@
 #include <QPoint>
 #include <QLabel>
 #include <QFontDatabase>
-
 #include <QGraphicsDropShadowEffect>
+
+
 
 
 int WIDTH = 225;
@@ -72,7 +73,6 @@ void RadialGauge::create_close_button()
 }
 
 
-
 void RadialGauge::create_demo_button()
 {
     m_demo_button = new QPushButton("Demo", this);
@@ -100,7 +100,6 @@ void RadialGauge::create_demo_button()
 }
 
 
-
 //mouse events overrides
 void RadialGauge::mousePressEvent(QMouseEvent* event) 
 {
@@ -113,6 +112,7 @@ void RadialGauge::mousePressEvent(QMouseEvent* event)
     
 }
 
+
 void RadialGauge::mouseMoveEvent(QMouseEvent* event) 
 {
     if (event->buttons() & Qt::LeftButton)
@@ -122,6 +122,7 @@ void RadialGauge::mouseMoveEvent(QMouseEvent* event)
         event->accept();
     }
 }
+
 
 void RadialGauge::build_UI()
 {
@@ -156,6 +157,7 @@ void RadialGauge::build_UI()
 
 }
 
+
 void RadialGauge::create_cpu_number_output_label()
 {
     // number output    
@@ -166,7 +168,7 @@ void RadialGauge::create_cpu_number_output_label()
     m_cpu_load_number = new QLabel(this);
     m_font = new QFont(family, 24, QFont::Bold);  // name, size
     m_cpu_load_number->setFont(*m_font); 
-    //m_cpu_load_number->setText("000%");
+    
     m_cpu_load_number->adjustSize();
     //m_font->setFixedPitch(true);
     m_cpu_load_number->move(WIDTH * 0.40, HEIGHT * 0.69);
@@ -178,16 +180,17 @@ void RadialGauge::create_cpu_number_output_label()
     m_outline->setXOffset(3);
     m_outline->setYOffset(3);
     m_cpu_load_number->setGraphicsEffect(m_outline);
-    m_cpu_load_number->setStyleSheet("color: white;");  
+    //m_cpu_load_number->setStyleSheet("color: white;");  
 
     //qDebug() << QFontDatabase().families();
     
 }
 
+
 void RadialGauge::create_cpu_gauge()
 {
     // CPU gauge
-    m_cpu_gauge = new AnalogGauge(-110.0, 2.22, "./gauge_cpu.png", QString("CPU LOAD"), QPoint((WIDTH * 0.5) - (WIDTH / 6), descr_label_pos_y + HEIGHT * 0.03), this);
+    m_cpu_gauge = new AnalogGauge(-110.0, 2.22, QString("./gauge_cpu.png"), QString("./gauge_arrow.png"), QString("./gauge_arrow_cap.png"), QString("CPU LOAD"), QPoint((WIDTH * 0.5) - (WIDTH / 6), descr_label_pos_y + HEIGHT * 0.03), this);
     m_cpu_gauge->setMinimumSize(WIDTH, WIDTH);
     // add gauge object to layout
     m_gauges_area->addWidget(m_cpu_gauge);
@@ -238,7 +241,7 @@ void RadialGauge::create_memory_gauge()
 {
 
     // memory gauge
-    m_memory_gauge = new AnalogGauge(-150, 3.0, "./gauge_ram.png", QString(" RAM%\n in use"), QPoint((WIDTH * 0.5) - (WIDTH / 10), descr_label_pos_y), this);
+    m_memory_gauge = new AnalogGauge(-150, 3.0, QString("./gauge_ram.png"), QString("./gauge_arrow.png"), QString("./gauge_arrow_cap.png"), QString(" RAM%\n in use"), QPoint((WIDTH * 0.5) - (WIDTH / 10), descr_label_pos_y), this);
     m_memory_gauge->setMinimumSize(WIDTH, WIDTH);
     // add gauge object to layout
     m_gauges_area->addWidget(m_memory_gauge);
@@ -258,15 +261,10 @@ void RadialGauge::create_memory_gauge()
 }
 
 
-
 void RadialGauge::connect_button_signals()
-{ 
-  
-
+{  
    connect(m_demo_button, &QPushButton::clicked, this, [this](int value) { run_demo_mode();} );  
-
    connect(m_close_button, &QPushButton::clicked, this, &QMainWindow::close);
-
 }
 
 
@@ -298,34 +296,24 @@ void RadialGauge::run_demo_mode()
 }
 
 
-
-
-
-int fudge = WIDTH * 0.15;
-int arrow_length = WIDTH * 0.16;
-int arrow_width = WIDTH * 0.015;
-int cover_cap_radius = WIDTH * 0.1;
-
-
 // GAUGE CLASS
 
-AnalogGauge::AnalogGauge(double needle_start_pos, double max_range, const QString& bg, const QString& label_text, QPoint label_pos, QWidget* parent):
-    m_current_angle(needle_start_pos), m_rotation_range(max_range), m_remap_value(needle_start_pos)
-{   
-    
+
+AnalogGauge::AnalogGauge(double needle_start_pos, double max_range, const QString& bg, const QString& needle_img, const QString& neddle_cap_img, const QString& label_text, QPoint label_pos, QWidget* parent):
+    QWidget(parent), m_current_angle(needle_start_pos), m_rotation_range(max_range), m_remap_value(needle_start_pos)
+{      
 
     m_end_position = 100 * m_rotation_range + m_remap_value; // have the end position in a variable for the animations
+    m_needle_pivot_offset = WIDTH * 0.15;
 
     m_self_description_text = label_text;
     m_self_description_position = label_pos;
 
-    load_background_image(bg);  
-    
+    load_background_image(bg); 
+    load_needle_image(needle_img);
+    load_needle_cap_image(neddle_cap_img);
     set_needle_pivot();
-
-    show_description_label();
-
-    qDebug() << "Analog constructor";
+    show_description_label();    
 }
 
 void AnalogGauge::show_description_label()
@@ -358,86 +346,67 @@ void AnalogGauge::paintEvent(QPaintEvent* event)
     painter.translate(m_gauge_center_x, m_gauge_center_y);  // move origin to gauge center
     painter.rotate(m_current_angle);         // rotate coordinate system
 
-    // needle is drawn in transformed coordinates
-    
-    painter.drawImage((-m_needle_width / 2), -m_needle_height + fudge, m_needle);
-
-   
+    // needle is drawn in transformed coordinates    
+    painter.drawImage((-m_needle_width / 2), -m_needle_height + m_needle_pivot_offset, m_needle);  
 
     /*painter.setBrush(Qt::black);
-    painter.drawEllipse(QPoint(0, 0), m_needle_cap_width/2, m_needle_cap_height/2);*/
+    painter.drawEllipse(QPoint(0, 0), m_needle_cap_width/2, m_needle_cap_height/2);*/// vector cap 
 
     painter.drawImage((-m_needle_cap_width / 2), (-m_needle_cap_height / 2), m_needle_cap);
     
 }
 
 void AnalogGauge::set_needle_pivot()
-{
-    m_needle_cap.load("./gauge_arrow_cap.png");
-    m_needle_cap = m_needle_cap.scaled(cover_cap_radius, cover_cap_radius, Qt::AspectRatioMode::KeepAspectRatio, Qt::SmoothTransformation);
-
-    m_needle_cap_width = m_needle_cap.width();
-    m_needle_cap_height = m_needle_cap.height();
-    
-    m_needle.load("./gauge_arrow.png");
-    m_needle = m_needle.scaledToHeight(WIDTH * 0.5, Qt::SmoothTransformation);   
+{   
 
     // needle pivot is set at the center of the circle
     m_gauge_center_x = WIDTH / 2;
-    m_gauge_center_y = HEIGHT / 2;
-
-    m_needle_width = m_needle.width();
-    m_needle_height = m_needle.height();
-
-    
+    m_gauge_center_y = HEIGHT / 2;    
 }
 
 void AnalogGauge::set_speed(double speed)
 {
     this->m_current_angle = map_speed_to_angle(speed); 
 
-    update(); // call repaint 
+    update(); // calls repaint 
 
     //qDebug() << "Current angle" << m_current_angle;
 }
 
 double AnalogGauge::map_speed_to_angle(int speed) 
 {   
-    return speed * m_rotation_range + m_remap_value; // maps the range       
+    return speed * m_rotation_range + m_remap_value; // gets the angle for the QPaint rotation     
 }
 
 
 
 void AnalogGauge::move_needle()
 {
-    
+    int animation_duration = 1000;  // animation length in milliseconds
+    int pause_duration = 100;    
 
-    //m_main_button
+    // animation group object
     QSequentialAnimationGroup* group = new QSequentialAnimationGroup(this);
 
-    QPropertyAnimation* sweep = new QPropertyAnimation(this, "current_angle");
-    int animation_duration = 1000;    
+    // set sweep animation
+    QPropertyAnimation* sweep = new QPropertyAnimation(this, "current_angle");    
+    sweep->setDuration(animation_duration);
+    sweep->setStartValue(m_current_angle); // starting angle
+    sweep->setKeyValueAt(1, m_end_position); // ending angle
+    sweep->setEasingCurve(QEasingCurve::OutCubic); // smooth deceleration into settle
 
-    int pause_duration = 100;
-    
-    sweep->setDuration(animation_duration); // animation length in miliseconds
-    sweep->setStartValue(m_current_angle); // starting angle 
-
-    
-
-    sweep->setKeyValueAt(1, m_end_position);     // settle
-    sweep->setEasingCurve(QEasingCurve::OutCubic);  // Smooth deceleration into settle
-
-    // Return to start  
+    // set retreat animation  
     QPropertyAnimation* retreat = new QPropertyAnimation(this, "current_angle");
     retreat->setEasingCurve(QEasingCurve::InOutQuad);
     retreat->setDuration(animation_duration);
     retreat->setStartValue(m_end_position);
     retreat->setEndValue(m_current_angle);
 
+    // add setups to group object
     group->addAnimation(sweep);
     group->addPause(100);
     group->addAnimation(retreat);
+    // playback
     group->start(QAbstractAnimation::DeleteWhenStopped); // clean up when done
 
    
@@ -470,12 +439,32 @@ void AnalogGauge::set_current_angle(double angle)
 
         emit current_angle_changed(m_current_angle); 
     }
-
 }
 
 void AnalogGauge::load_background_image(const QString& bg)
-{
+{    
     m_background.load(bg);
+}
+
+void AnalogGauge::load_needle_image(const QString& needle_image)
+{
+    m_needle.load(needle_image);    
+
+    m_needle = m_needle.scaledToHeight(HEIGHT * 0.5, Qt::SmoothTransformation);
+    m_needle_width = m_needle.width();
+    m_needle_height = m_needle.height();
+}
+
+void AnalogGauge::load_needle_cap_image(const QString& needle_cap_image)
+{
+    m_needle_cap.load(needle_cap_image);  
+
+    int cover_cap_radius = WIDTH * 0.1;
+
+    m_needle_cap = m_needle_cap.scaled(cover_cap_radius, cover_cap_radius, Qt::AspectRatioMode::KeepAspectRatio, Qt::SmoothTransformation);
+
+    m_needle_cap_width = m_needle_cap.width();
+    m_needle_cap_height = m_needle_cap.height();
 }
 
 
