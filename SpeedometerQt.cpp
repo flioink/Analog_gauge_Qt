@@ -30,7 +30,7 @@ RadialGauge::RadialGauge(QWidget* parent)
     : QMainWindow(parent)
 { 
 
-    setWindowIcon(QIcon("gauge_icon.png"));
+    setWindowIcon(QIcon("icon.ico"));
     build_UI();
    
     setWindowFlags(Qt::FramelessWindowHint);
@@ -73,7 +73,7 @@ void RadialGauge::create_demo_button()
     m_demo_button->setFixedSize(width() * 0.07, height() * 0.04); 
     
     //m_demo_button->move(m_demo_button->width() - m_demo_button->width() * 0.7, 10);// top-right   
-    m_demo_button->move(WIDTH * 0.5 - m_demo_button->width() * 0.30, HEIGHT * 0.6);  // upper middle of the first gauge 
+    m_demo_button->move(WIDTH * 0.5 - m_demo_button->width() * 0.30, HEIGHT * 0.84);  // upper middle of the first gauge 
 
     m_demo_button->setObjectName("demo_button");  
    
@@ -174,7 +174,7 @@ void RadialGauge::create_cpu_number_output_label()
     
     m_cpu_load_number->adjustSize();
     //m_font->setFixedPitch(true);
-    m_cpu_load_number->move(WIDTH * 0.40, HEIGHT * 0.69);
+    m_cpu_load_number->move(WIDTH * 0.40, HEIGHT * 0.6);
 
     m_outline = new QGraphicsDropShadowEffect(this);
     m_outline->setBlurRadius(2);               // blur
@@ -192,9 +192,9 @@ void RadialGauge::create_checkbox()
 {
     m_on_top_checkbox = new QCheckBox(this);
 
-    m_on_top_checkbox->setChecked(true);;
-
-    m_on_top_checkbox->move(WIDTH / 2 + WIDTH * 0.015, HEIGHT * 0.37);  // upper middle of the first gauge 
+    m_on_top_checkbox->setChecked(true);
+    //m_on_top_checkbox->move(WIDTH / 2 + WIDTH * 0.015, HEIGHT * 0.37);  // upper middle of the first gauge 
+    m_on_top_checkbox->move((WIDTH * 1.5) + WIDTH * 0.035, HEIGHT * 0.66);  // upper middle of the first gauge 
 
     m_on_top_checkbox->setObjectName("on_top_checkbox");
 
@@ -206,7 +206,7 @@ void RadialGauge::create_checkbox()
 void RadialGauge::create_cpu_gauge()
 {
     // CPU gauge
-    m_cpu_gauge = new AnalogGauge(-110.0, 2.22, QString("./gauge_cpu.png"), QString("./gauge_arrow.png"), QString("./gauge_arrow_cap.png"), QString("CPU LOAD"), QPoint((WIDTH * 0.5) - (WIDTH / 6), descr_label_pos_y + HEIGHT * 0.03), this);
+    m_cpu_gauge = new AnalogGauge(-110.0, 2.22, QString("./gauge_cpu.png"), QString("./gauge_arrow.png"), QString("./gauge_arrow_cap.png"), QString("CPU LOAD"), QPoint((WIDTH * 0.5) - (WIDTH / 6), descr_label_pos_y - HEIGHT * 0.05), this);
     m_cpu_gauge->setMinimumSize(WIDTH, WIDTH);
     // add gauge object to layout
     m_gauges_area->addWidget(m_cpu_gauge);
@@ -214,7 +214,7 @@ void RadialGauge::create_cpu_gauge()
 
     connect(m_timer, &QTimer::timeout, this, [this]()
         {
-            double cpu = m_system_monitor->get_cpu_usage();
+            double cpu = m_system_monitor->get_cpu();
             //qDebug() << "CURRENT CPU LOAD: " << cpu;
 
             if (cpu < 1)
@@ -257,16 +257,16 @@ void RadialGauge::create_memory_gauge()
 {
 
     // memory gauge
-    m_memory_gauge = new AnalogGauge(-150, 3.0, QString("./gauge_ram.png"), QString("./gauge_arrow.png"), QString("./gauge_arrow_cap.png"), QString(" RAM%\n in use"), QPoint((WIDTH * 0.5) - (WIDTH / 10), descr_label_pos_y), this);
+    m_memory_gauge = new AnalogGauge(-148.5, 3.0, QString("./gauge_ram.png"), QString("./gauge_arrow.png"), QString("./gauge_arrow_cap.png"), QString(" RAM%\n in use"), QPoint((WIDTH * 0.5) - (WIDTH / 10), descr_label_pos_y), this);
     m_memory_gauge->setMinimumSize(WIDTH, WIDTH);
     // add gauge object to layout
     m_gauges_area->addWidget(m_memory_gauge);
     
     connect(m_timer, &QTimer::timeout, this, [this]()
         {
-            auto mem_perc_used = m_system_monitor->get_memory_usage();
+            auto mem_perc_used = m_system_monitor->get_memory();
 
-            qDebug() << "MEMORY % USED: " << m_system_monitor->get_memory_usage();
+            qDebug() << "MEMORY % USED: " << m_system_monitor->get_memory();
 
             if (!m_paused)
             {
@@ -298,8 +298,8 @@ void RadialGauge::run_demo_mode()
     QTimer::singleShot(2200, this, [this]()
         {
             
-            double cpu = m_system_monitor->get_cpu_usage();
-            double mem = m_system_monitor->get_memory_usage();
+            double cpu = m_system_monitor->get_cpu();
+            double mem = m_system_monitor->get_memory();
 
             m_cpu_gauge->animate_to(cpu);
             m_memory_gauge->animate_to(mem);
@@ -396,7 +396,7 @@ double AnalogGauge::map_speed_to_angle(int speed)
     return speed * m_rotation_range + m_remap_value; // gets the angle for the QPaint rotation     
 }
 
-
+// this is for the animation macro system from the header
 
 void AnalogGauge::move_needle()
 {
@@ -447,7 +447,7 @@ void AnalogGauge::animate_to(double target_value)
 
 
 
-// this is for the animation macro system from the header
+
 void AnalogGauge::set_current_angle(double angle)
 {
     if (m_current_angle != angle) // check if the value actually changed
@@ -498,6 +498,55 @@ void AnalogGauge::load_needle_cap_image(const QString& needle_cap_image)
 
 SystemMonitor::SystemMonitor(QObject* parent): QObject(parent), m_smooth_cpu(0.0), m_smooth_disk(0.0)
 {
+
+
+    #ifdef Q_OS_WIN
+        init_pdh_queries();
+    #endif
+    
+}
+
+SystemMonitor::~SystemMonitor()
+{
+#ifdef Q_OS_WIN
+    // close PDH queries on exit
+    if (m_cpu_query)
+        PdhCloseQuery(m_cpu_query);
+    if (m_memory_query)
+        PdhCloseQuery(m_memory_query);
+    
+#endif
+
+}
+
+#ifdef Q_OS_WIN
+
+double SystemMonitor::get_cpu()
+{
+    #ifdef Q_OS_WIN
+        return get_cpu_usage_pdh();
+    #elif defined(Q_OS_LINUX)
+        return query_cpu_proc();
+    #else
+        return 0.0;
+    #endif
+}
+
+double SystemMonitor::get_memory()
+{
+    #ifdef Q_OS_WIN
+        return get_memory_usage_pdh();
+
+    #elif defined(Q_OS_LINUX)
+        return query_ram_proc();
+    #else
+        return 0.0;
+    #endif
+}
+
+
+void SystemMonitor::init_pdh_queries()
+{
     // Pdh queries
     PdhOpenQuery(NULL, 0, &m_cpu_query);
     PdhAddCounter(m_cpu_query, L"\\Processor(_Total)\\% Processor Time", 0, &m_cpu_counter);
@@ -505,17 +554,12 @@ SystemMonitor::SystemMonitor(QObject* parent): QObject(parent), m_smooth_cpu(0.0
     PdhOpenQuery(NULL, 0, &m_memory_query);
     PdhAddCounter(m_memory_query, L"\\Memory\\Available MBytes", 0, &m_memory_counter);
 
-    PdhOpenQuery(NULL, 0, &m_disk_query);
-    PdhAddCounter(m_disk_query, L"\\PhysicalDisk(_Total)\\Disk Read Bytes/sec", 0, &m_disk_counter);// does not show anything useful
-
-    
+   
 }
 
-SystemMonitor::~SystemMonitor()
-{
-}
 
-double SystemMonitor::get_cpu_usage()
+
+double SystemMonitor::get_cpu_usage_pdh()
 {
     PdhCollectQueryData(m_cpu_query);
     PDH_FMT_COUNTERVALUE value;
@@ -528,7 +572,9 @@ double SystemMonitor::get_cpu_usage()
     return m_smooth_cpu;
 }
 
-double SystemMonitor::get_memory_usage()
+
+
+double SystemMonitor::get_memory_usage_pdh()
 {
 
     PdhCollectQueryData(m_memory_query);
@@ -549,20 +595,42 @@ double SystemMonitor::get_memory_usage()
     return used_memory_percentage;
 }
 
-double SystemMonitor::get_disk_read_speed()
+#elif defined(Q_OS_LINUX)
+
+double SystemMonitor::query_cpu_proc()
 {
-    PdhCollectQueryData(m_disk_query);
-    PDH_FMT_COUNTERVALUE value;
-    PdhGetFormattedCounterValue(m_disk_counter, PDH_FMT_DOUBLE, NULL, &value);
+    while (true) 
+    {
+        double cpu = get_cpu_usage();
+        std::cout << "CPU: " << cpu << "%" << std::endl;
+        std::this_thread::sleep_for(std::chrono::seconds(1));
 
-    double current_disk_usage = value.doubleValue;    
-
-    m_smooth_disk = 0.9 * m_smooth_disk + current_disk_usage * 0.1;
-
-    //qDebug() << "Cirrent Disk in Kb/s: " << current_disk_usage;
-
-    return m_smooth_disk;
+        return cpu;
+    }
 
 }
 
+double SystemMonitor::query_ram_proc()
+{
+    return 0.0;
+}
 
+
+double SystemMonitor::get_cpu_usage()
+{
+    FILE* pipe = popen("mpstat 1 1 | tail -1 | awk '{print 100 - $12}'", "r");
+    if (!pipe) return -1;
+
+    char buffer[128];
+    double usage = -1;
+    if (fgets(buffer, sizeof(buffer), pipe)) 
+    {
+        usage = std::atof(buffer);
+    }
+    pclose(pipe);
+    return usage;
+}
+
+
+
+#endif

@@ -2,7 +2,7 @@ QPushButton
 {
     background: transparent;
     color: white;
-    border: 1px solid rgba(255,255,255,0.3);
+    border: 2px solid rgba(255,255,255,0.3);
     border-radius: 3px;
 }
 
@@ -13,9 +13,7 @@ QPushButton:hover
 }
 
 
-/* ==============================
-   QCheckBox Styling
-   ============================== */
+
 
 /* Base checkbox label text */
 QCheckBox {
@@ -40,6 +38,6 @@ QCheckBox::indicator:hover {
 
 /* Checked state */
 QCheckBox::indicator:checked {
-    background: rgba(255, 255, 255, 0.5);        /* faint fill when checked */
+    background: rgba(36, 193, 255, 0.9);        /* faint fill when checked */
     border-color: rgba(255, 255, 255, 1.0);      /* brighter border */
 }

@@ -169,26 +169,49 @@ class SystemMonitor : public QObject
     Q_OBJECT
 
 public:
-    SystemMonitor(QObject*);
+    explicit SystemMonitor(QObject* parent = nullptr);
     ~SystemMonitor();
 
-    double get_cpu_usage();
-    double get_memory_usage();
-    double get_disk_read_speed();
+   
+
+    double get_cpu();
+    double get_memory();
     
 
 private:
 
+    #ifdef Q_OS_WIN
+   
+
+    void init_pdh_queries();
+    double get_cpu_usage_pdh();
+    double get_memory_usage_pdh();
+    
+
     double m_smooth_cpu;
     double m_smooth_disk;
+
 
     PDH_HQUERY m_cpu_query;
     PDH_HCOUNTER m_cpu_counter;
 
     PDH_HQUERY m_memory_query;
-    PDH_HCOUNTER m_memory_counter;
+    PDH_HCOUNTER m_memory_counter; 
 
-    PDH_HQUERY m_disk_query;
-    PDH_HCOUNTER m_disk_counter;
+    
+    // Linux implementation
+
+    #elif defined(Q_OS_LINUX)
+
+    #include <chrono>
+    #include <thread>
+
+    double query_cpu_proc();  
+    double query_ram_proc();
+
+    double get_cpu_usage();
+
+
+    #endif
 
 };
