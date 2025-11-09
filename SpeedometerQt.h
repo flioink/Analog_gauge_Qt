@@ -185,12 +185,10 @@ private:
 
     void init_pdh_queries();
     double get_cpu_usage_pdh();
-    double get_memory_usage_pdh();
-    
+    double get_memory_usage_pdh();    
 
     double m_smooth_cpu;
     double m_smooth_disk;
-
 
     PDH_HQUERY m_cpu_query;
     PDH_HCOUNTER m_cpu_counter;
@@ -201,10 +199,11 @@ private:
     
     // Linux implementation
 
-    #elif defined(Q_OS_LINUX)
+    #elif defined(Q_OS_LINUX)  
 
-    #include <chrono>
-    #include <thread>
+
+    double m_smooth_cpu;
+    double m_smooth_disk;
 
     double query_cpu_proc();  
     double query_ram_proc();

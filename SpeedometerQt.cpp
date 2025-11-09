@@ -499,10 +499,16 @@ void AnalogGauge::load_needle_cap_image(const QString& needle_cap_image)
 SystemMonitor::SystemMonitor(QObject* parent): QObject(parent), m_smooth_cpu(0.0), m_smooth_disk(0.0)
 {
 
+#ifdef Q_OS_WIN
+    init_pdh_queries();
 
-    #ifdef Q_OS_WIN
-        init_pdh_queries();
-    #endif
+#elif defined(Q_OS_LINUX)
+
+    QTimer* timer = new QTimer(this);
+    connect(timer, &QTimer::timeout, this, &SystemMonitor::query_cpu_proc);
+    timer->start(180);  // fires every n ms without blocking
+
+#endif
     
 }
 
@@ -565,11 +571,27 @@ double SystemMonitor::get_cpu_usage_pdh()
     PDH_FMT_COUNTERVALUE value;
     PdhGetFormattedCounterValue(m_cpu_counter, PDH_FMT_DOUBLE, NULL, &value);
 
+    static std::vector<double> values;
+    static const int WINDOW_SIZE = 5;
+
     double current_cpu = value.doubleValue;
     //qDebug() << "CURRENT CPU LOAD: " << current_cpu;    
     m_smooth_cpu = 0.9 * m_smooth_cpu + current_cpu * 0.1; // low pass
+
+    values.push_back(m_smooth_cpu);
+    if (values.size() > WINDOW_SIZE)
+    {
+        values.erase(values.begin());
+    }
+
+   // qDebug() << "CPU LOAD: " << cpu;
+
+    // Return average
+    double sum = 0;
+    for (double v : values) sum += v;
+    return sum / values.size();
         
-    return m_smooth_cpu;
+    //return m_smooth_cpu;
 }
 
 
@@ -599,13 +621,27 @@ double SystemMonitor::get_memory_usage_pdh()
 
 double SystemMonitor::query_cpu_proc()
 {
-    while (true) 
+    while (true)
     {
         double cpu = get_cpu_usage();
-        std::cout << "CPU: " << cpu << "%" << std::endl;
-        std::this_thread::sleep_for(std::chrono::seconds(1));
 
-        return cpu;
+        static std::vector<double> values;
+        static const int WINDOW_SIZE = 5;
+
+        values.push_back(cpu);
+        if (values.size() > WINDOW_SIZE)
+        {
+            values.erase(values.begin());
+        }
+
+        qDebug() << "CPU LOAD: " << cpu;
+
+        // Return average
+        double sum = 0;
+        for (double v : values) sum += v;
+        return sum / values.size();
+
+        //return cpu;
     }
 
 }
@@ -615,20 +651,45 @@ double SystemMonitor::query_ram_proc()
     return 0.0;
 }
 
-
+// from rosettacode.org
 double SystemMonitor::get_cpu_usage()
 {
-    FILE* pipe = popen("mpstat 1 1 | tail -1 | awk '{print 100 - $12}'", "r");
-    if (!pipe) return -1;
+    static int prev_idle = 0, prev_total = 0;
 
-    char buffer[128];
-    double usage = -1;
-    if (fgets(buffer, sizeof(buffer), pipe)) 
+    QFile file("/proc/stat");
+    if (!file.open(QFile::ReadOnly)) return 0;
+
+    QByteArray line = file.readLine();
+    file.close();
+
+    QList<QByteArray> times = line.simplified().split(' ').mid(1);
+    int idle = times.at(3).toInt();  // idle time
+    int total = 0;
+    for (const auto& time : times)
     {
-        usage = std::atof(buffer);
+        total += time.toInt();
     }
-    pclose(pipe);
-    return usage;
+
+    if (prev_total > 0)
+    {  // if previous sample
+        double usage = (1 - (1.0 * (idle - prev_idle) / (total - prev_total))) * 100.0;
+
+        if (std::isnan(usage) || usage <= 0 || usage > 100)
+        {
+            return 1.0;  // or return previous valid value
+        }
+
+        prev_idle = idle;
+        prev_total = total;
+
+
+        return usage;
+    }
+
+    prev_idle = idle;
+    prev_total = total;
+    return 0;
+
 }
 
 
