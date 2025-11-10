@@ -257,7 +257,7 @@ void RadialGauge::create_memory_gauge()
 {
 
     // memory gauge
-    m_memory_gauge = new AnalogGauge(-148.5, 3.0, QString("./gauge_ram.png"), QString("./gauge_arrow.png"), QString("./gauge_arrow_cap.png"), QString(" RAM%\n in use"), QPoint((WIDTH * 0.5) - (WIDTH / 10), descr_label_pos_y), this);
+    m_memory_gauge = new AnalogGauge(-151, 3.02, QString("./gauge_ram.png"), QString("./gauge_arrow.png"), QString("./gauge_arrow_cap.png"), QString(" RAM%\n in use"), QPoint((WIDTH * 0.5) - (WIDTH / 10), descr_label_pos_y), this);
     m_memory_gauge->setMinimumSize(WIDTH, WIDTH);
     // add gauge object to layout
     m_gauges_area->addWidget(m_memory_gauge);
@@ -388,7 +388,7 @@ void AnalogGauge::set_speed(double speed)
 
     update(); // calls repaint 
 
-    //qDebug() << "Current angle" << m_current_angle;
+    qDebug() << "Current angle" << m_current_angle;
 }
 
 double AnalogGauge::map_speed_to_angle(int speed) 
@@ -422,7 +422,7 @@ void AnalogGauge::move_needle()
 
     // add setups to group object
     group->addAnimation(sweep);
-    group->addPause(100);
+    group->addPause(pause_duration);
     group->addAnimation(retreat);
     // playback
     group->start(QAbstractAnimation::DeleteWhenStopped); // clean up when done
@@ -582,16 +582,15 @@ double SystemMonitor::get_cpu_usage_pdh()
     if (values.size() > WINDOW_SIZE)
     {
         values.erase(values.begin());
-    }
+    }   
 
-   // qDebug() << "CPU LOAD: " << cpu;
-
-    // Return average
+    // return average of n values stored in a temp buffer
     double sum = 0;
-    for (double v : values) sum += v;
+    for (double v : values) { sum += v; }
+
     return sum / values.size();
         
-    //return m_smooth_cpu;
+    
 }
 
 
@@ -648,7 +647,11 @@ double SystemMonitor::query_cpu_proc()
 
 double SystemMonitor::query_ram_proc()
 {
-    return 0.0;
+    auto ram = get_ram_usage();
+
+    //qDebug() << "CURRENT RAM: " << ram;
+
+    return ram;
 }
 
 // from rosettacode.org
@@ -689,6 +692,49 @@ double SystemMonitor::get_cpu_usage()
     prev_idle = idle;
     prev_total = total;
     return 0;
+
+}
+
+
+double SystemMonitor::get_ram_usage()
+{
+    QFile file("/proc/meminfo");
+    if (!file.open(QIODevice::ReadOnly)) return 0.0;
+
+    // read entire content at once instead of streaming
+    QByteArray content = file.readAll();
+    file.close();
+
+    // parse the content manually
+    QString content_str = QString::fromUtf8(content);
+    QStringList lines = content_str.split('\n');
+
+    long mem_total = 0, mem_available = 0;
+
+    for (const QString& line : lines)
+    {
+        if (line.startsWith("MemTotal:"))
+        {
+            QStringList parts = line.split(' ', Qt::SkipEmptyParts);
+            if (parts.size() >= 2) mem_total = parts[1].toLong();
+        }
+
+        else if (line.startsWith("MemAvailable:"))
+        {
+            QStringList parts = line.split(' ', Qt::SkipEmptyParts);
+            if (parts.size() >= 2) mem_available = parts[1].toLong();
+        }
+    }
+
+    if (mem_total > 0 && mem_available > 0)
+    {
+        double usage = ((mem_total - mem_available) * 100.0) / mem_total;
+        qDebug() << "calculated RAM usage:" << usage;
+        return usage;
+    }
+
+
+    return 0.0;
 
 }
 

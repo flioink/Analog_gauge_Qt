@@ -209,6 +209,7 @@ private:
     double query_ram_proc();
 
     double get_cpu_usage();
+    double get_ram_usage();
 
 
     #endif
