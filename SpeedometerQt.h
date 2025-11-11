@@ -30,9 +30,7 @@ public slots:
 
     void set_label_color(int n);
 
-    void create_memory_gauge();
-
-    //void create_disk_gauge();
+    void create_memory_gauge();   
 
     void run_demo_mode();    
 

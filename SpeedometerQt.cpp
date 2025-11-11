@@ -188,6 +188,7 @@ void RadialGauge::create_cpu_number_output_label()
     
 }
 
+
 void RadialGauge::create_checkbox()
 {
     m_on_top_checkbox = new QCheckBox(this);
@@ -504,9 +505,14 @@ SystemMonitor::SystemMonitor(QObject* parent): QObject(parent), m_smooth_cpu(0.0
 
 #elif defined(Q_OS_LINUX)
 
-    QTimer* timer = new QTimer(this);
-    connect(timer, &QTimer::timeout, this, &SystemMonitor::query_cpu_proc);
-    timer->start(180);  // fires every n ms without blocking
+    QTimer* cpu_timer = new QTimer(this);
+    QTimer* ram_timer = new QTimer(this);
+
+    connect(cpu_timer, &QTimer::timeout, this, &SystemMonitor::query_cpu_proc);
+    connect(ram_timer, &QTimer::timeout, this, &SystemMonitor::query_ram_proc);
+
+    cpu_timer->start(180);  // CPU updates
+    ram_timer->start(400); // RAM updates less often 
 
 #endif
     
