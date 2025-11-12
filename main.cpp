@@ -5,9 +5,7 @@
 QString set_styling();
 
 int main(int argc, char *argv[])
-{
-
-    
+{    
 
     QApplication app(argc, argv);
     RadialGauge window;

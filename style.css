@@ -6,14 +6,10 @@ QPushButton
     border-radius: 3px;
 }
 
-
 QPushButton:hover
 {
     background: rgba(255,255,255,0.1); 
 }
-
-
-
 
 /* Base checkbox label text */
 QCheckBox {
@@ -24,11 +20,11 @@ QCheckBox {
 
 /* The square indicator (the box itself) */
 QCheckBox::indicator {
-    width: 9px;                      /* size of the box */
+    width: 9px;                                     /* size of the box */
     height: 9px;
-    border: 2px solid rgba(255, 255, 255, 0.7);  /* semi-transparent border */
-    background: transparent;         /* no fill */
-    border-radius: 2px;              /* slightly rounded corners */
+    border: 2px solid rgba(255, 255, 255, 0.7);     /* semi-transparent border */
+    background: transparent;                        /* no fill */
+    border-radius: 2px;                             /* slightly rounded corners */
 }
 
 /* Hover state */
@@ -38,6 +34,6 @@ QCheckBox::indicator:hover {
 
 /* Checked state */
 QCheckBox::indicator:checked {
-    background: rgba(36, 193, 255, 0.9);        /* faint fill when checked */
+    background: rgba(36, 193, 255, 0.9);         /* faint fill when checked */
     border-color: rgba(255, 255, 255, 1.0);      /* brighter border */
 }

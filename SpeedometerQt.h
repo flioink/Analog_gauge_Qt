@@ -1,8 +1,13 @@
 #pragma once
 
+#include <QtWidgets/QMainWindow>
+
+#ifdef Q_OS_WIN
+
 #pragma comment(lib, "Pdh.lib")
 #include <Pdh.h>
-#include <QtWidgets/QMainWindow>
+
+#endif
 
 class QSlider;
 class QPushButton;
