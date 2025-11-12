@@ -1,29 +1,27 @@
 #include "SpeedometerQt.h"
+
 #include <QSlider>
+#include <QDebug>
+#include <QTimer>
+#include <QPoint>
+#include <QLabel>
+#include <QPainter>
+#include <QCheckBox>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QPushButton>
-#include <QCheckBox>
-#include <QPainter>
-#include <QDebug>
+#include <QMouseEvent>
+#include <QFontDatabase>
 #include <QPropertyAnimation>
 #include <QSequentialAnimationGroup>
-#include <QTimer>
-#include <QMouseEvent>
-#include <QPoint>
-#include <QLabel>
-#include <QFontDatabase>
 #include <QGraphicsDropShadowEffect>
-
-
 
 
 int WIDTH = 225;
 //int WIDTH = 450;
 int HEIGHT = WIDTH; // squared shape
 
-int descr_label_pos_y = HEIGHT * 0.76;
-
+int descr_label_pos_y = HEIGHT * 0.76; // labels position
 
 
 RadialGauge::RadialGauge(QWidget* parent)
@@ -47,8 +45,7 @@ RadialGauge::RadialGauge(QWidget* parent)
 }
 
 
-RadialGauge::~RadialGauge()
-{}
+RadialGauge::~RadialGauge(){}
 
 
 void RadialGauge::create_close_button()
@@ -211,8 +208,17 @@ void RadialGauge::create_checkbox()
 void RadialGauge::create_cpu_gauge()
 {
     // CPU gauge
-    m_cpu_gauge = new AnalogGauge(-110.0, 2.22, QString("./gauge_cpu.png"), QString("./gauge_arrow.png"), QString("./gauge_arrow_cap.png"), QString("CPU LOAD"), QPoint((WIDTH * 0.5) - (WIDTH / 6), descr_label_pos_y - HEIGHT * 0.05), this);
-    m_cpu_gauge->setMinimumSize(WIDTH, WIDTH);
+    m_cpu_gauge = new AnalogGauge(
+        -110.0,
+        2.22,
+        QString("./gauge_cpu.png"),
+        QString("./gauge_arrow.png"),
+        QString("./gauge_arrow_cap.png"),
+        QString("CPU LOAD"),
+        QPoint((WIDTH * 0.5) - (WIDTH / 6), descr_label_pos_y - HEIGHT * 0.05),
+        this);
+
+    m_cpu_gauge->setMinimumSize(WIDTH, HEIGHT);
     // add gauge object to layout
     m_gauges_area->addWidget(m_cpu_gauge);
 
@@ -263,8 +269,16 @@ void RadialGauge::create_memory_gauge()
 {
 
     // memory gauge
-    m_memory_gauge = new AnalogGauge(-151, 3.02, QString("./gauge_ram.png"), QString("./gauge_arrow.png"), QString("./gauge_arrow_cap.png"), QString(" RAM%\n in use"), QPoint((WIDTH * 0.5) - (WIDTH / 10), descr_label_pos_y), this);
-    m_memory_gauge->setMinimumSize(WIDTH, WIDTH);
+    m_memory_gauge = new AnalogGauge(
+        -151, 3.02,
+        QString("./gauge_ram.png"),
+        QString("./gauge_arrow.png"),
+        QString("./gauge_arrow_cap.png"),
+        QString(" RAM%\n in use"),
+        QPoint((WIDTH * 0.5) - (WIDTH / 10), descr_label_pos_y),
+        this);
+
+    m_memory_gauge->setMinimumSize(WIDTH, HEIGHT);
     // add gauge object to layout
     m_gauges_area->addWidget(m_memory_gauge);
     
@@ -697,12 +711,11 @@ double SystemMonitor::get_cpu_usage()
 
         if (std::isnan(usage) || usage <= 0 || usage > 100)
         {
-            return 1.0;  // or return previous valid value
+            return 1.0;
         }
 
         prev_idle = idle;
         prev_total = total;
-
 
         return usage;
     }
@@ -710,7 +723,6 @@ double SystemMonitor::get_cpu_usage()
     prev_idle = idle;
     prev_total = total;
     return 0;
-
 }
 
 
