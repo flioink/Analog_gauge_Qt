@@ -42,22 +42,25 @@ RadialGauge::RadialGauge(QWidget* parent)
     setWindowFlags(windowFlags() | Qt::WindowStaysOnTopHint);
 
     setAttribute(Qt::WA_TranslucentBackground);
-    //setStyleSheet("background:transparent;");
-
+    
     run_demo_mode();
 }
 
+
 RadialGauge::~RadialGauge()
 {}
+
 
 void RadialGauge::create_close_button()
 {
    
     // main_widget and gauges_layout have different dimensions - use size constants to position buttons
+    
+    // button size as percentage of window
     m_close_button = new QPushButton("Exit", this);
     m_close_button->setFixedSize(width() * 0.05, height() * 0.04);
-    //m_close_button->move(WIDTH * 2 - m_close_button->width() + 20, 10);// top-right
-    m_close_button->move(WIDTH * 0.5 - m_close_button->width() * 0.2, HEIGHT * 0.3);
+    
+    m_close_button->move(WIDTH * 0.5 - m_close_button->width() * 0.2, HEIGHT * 0.3); // m_close_button->move(WIDTH * 2 - m_close_button->width() + 20, 10);// top-right
 
     m_close_button->setObjectName("close_button");
 
@@ -68,16 +71,15 @@ void RadialGauge::create_close_button()
 void RadialGauge::create_demo_button()
 {
     m_demo_button = new QPushButton("Demo", this);
-
-    // size as percentage of window
-    m_demo_button->setFixedSize(width() * 0.07, height() * 0.04); 
     
-    //m_demo_button->move(m_demo_button->width() - m_demo_button->width() * 0.7, 10);// top-right   
+    m_demo_button->setFixedSize(width() * 0.07, height() * 0.04);   
+    
     m_demo_button->move(WIDTH * 0.5 - m_demo_button->width() * 0.30, HEIGHT * 0.84);  // upper middle of the first gauge 
 
     m_demo_button->setObjectName("demo_button");  
    
 }
+
 
 void RadialGauge::set_always_on_top(bool enabled)
 {
@@ -145,15 +147,12 @@ void RadialGauge::build_UI()
 
     create_close_button();
     create_demo_button();
-
     
-    create_checkbox();
-    
+    create_checkbox();    
 
-    m_timer->start(80); // Update every n milliseconds      
+    m_timer->start(60); // Update every n milliseconds      
 
-    master_layout->addLayout(m_gauges_area);
-    //master_layout->addLayout(m_buttons_area, 1);
+    master_layout->addLayout(m_gauges_area);   
 
     master_layout->setAlignment(Qt::AlignTop);
     this->setCentralWidget(central_widget);      
@@ -168,13 +167,12 @@ void RadialGauge::create_cpu_number_output_label()
     int id = QFontDatabase::addApplicationFont("./digital-7 (mono).ttf");  // load the font
     QString family = QFontDatabase::applicationFontFamilies(id).at(0);
 
-    m_cpu_load_number = new QLabel(this);
+    m_cpu_load_number = new QLabel("000%", this);
     m_font = new QFont(family, 24, QFont::Bold);  // name, size
-    m_cpu_load_number->setFont(*m_font); 
-    
+    m_cpu_load_number->setFont(*m_font);
+
+    m_cpu_load_number->setStyleSheet("color: transparent;");    
     m_cpu_load_number->adjustSize();
-    //m_font->setFixedPitch(true);
-    m_cpu_load_number->move(WIDTH * 0.40, HEIGHT * 0.6);
 
     m_outline = new QGraphicsDropShadowEffect(this);
     m_outline->setBlurRadius(2);               // blur
@@ -182,7 +180,13 @@ void RadialGauge::create_cpu_number_output_label()
     m_outline->setOffset(3, 3);                // shadow offset
     m_outline->setXOffset(3);
     m_outline->setYOffset(3);
-    m_cpu_load_number->setGraphicsEffect(m_outline);    
+    m_cpu_load_number->setGraphicsEffect(m_outline);
+    
+    //m_cpu_load_number->move(WIDTH * 0.40, HEIGHT * 0.6);
+
+    int text_width = m_cpu_load_number->fontMetrics().horizontalAdvance(m_cpu_load_number->text());
+    int x = (WIDTH * 0.53) - text_width / 2;
+    m_cpu_load_number->move(x, HEIGHT * 0.6);    
 
     //qDebug() << QFontDatabase().families();
     
@@ -245,6 +249,7 @@ void RadialGauge::create_cpu_gauge()
         });
 
 }
+
 
 void RadialGauge::set_label_color(int n)
 {
@@ -318,8 +323,17 @@ void RadialGauge::run_demo_mode()
 // GAUGE CLASS
 
 
-AnalogGauge::AnalogGauge(double needle_start_pos, double max_range, const QString& bg, const QString& needle_img, const QString& neddle_cap_img, const QString& label_text, QPoint label_pos, QWidget* parent):
-    QWidget(parent), m_current_angle(needle_start_pos), m_rotation_range(max_range), m_remap_value(needle_start_pos)
+AnalogGauge::AnalogGauge(
+
+    double needle_start_pos,
+    double max_range, const QString& bg,
+    const QString& needle_img,
+    const QString& neddle_cap_img,
+    const QString& label_text,
+    QPoint label_pos,
+    QWidget* parent
+
+    ): QWidget(parent), m_current_angle(needle_start_pos), m_rotation_range(max_range), m_remap_value(needle_start_pos)
 {      
 
     m_end_position = 100 * m_rotation_range + m_remap_value; // have the end position in a variable for the animations
@@ -335,11 +349,15 @@ AnalogGauge::AnalogGauge(double needle_start_pos, double max_range, const QStrin
     show_description_label();    
 }
 
+
 void AnalogGauge::show_description_label()
 {
+
     // test for glow effect
     m_self_description_label = new QLabel(m_self_description_text, this);
+
     m_self_description_label->setStyleSheet("color: white; font-size: 14px; font-weight: bold;"); // for now
+
     m_self_description_label->move(m_self_description_position);
     
     QGraphicsDropShadowEffect* glow = new QGraphicsDropShadowEffect();
@@ -350,6 +368,7 @@ void AnalogGauge::show_description_label()
     m_self_description_label->setGraphicsEffect(glow);
     m_self_description_label->show();
 }
+
 
 void AnalogGauge::paintEvent(QPaintEvent* event)
 {
@@ -363,17 +382,18 @@ void AnalogGauge::paintEvent(QPaintEvent* event)
     // transforms for needle
    
     painter.translate(m_gauge_center_x, m_gauge_center_y);  // move origin to gauge center
-    painter.rotate(m_current_angle);         // rotate coordinate system
+    painter.rotate(m_current_angle);  // rotate coordinate system
 
     // needle is drawn in transformed coordinates    
     painter.drawImage((-m_needle_width / 2), -m_needle_height + m_needle_pivot_offset, m_needle);  
 
     /*painter.setBrush(Qt::black);
-    painter.drawEllipse(QPoint(0, 0), m_needle_cap_width/2, m_needle_cap_height/2);*/// vector cap 
+    painter.drawEllipse(QPoint(0, 0), m_needle_cap_width/2, m_needle_cap_height/2);*/ // vector cap 
 
     painter.drawImage((-m_needle_cap_width / 2), (-m_needle_cap_height / 2), m_needle_cap);
     
 }
+
 
 void AnalogGauge::set_needle_pivot()
 {   
@@ -389,8 +409,9 @@ void AnalogGauge::set_speed(double speed)
 
     update(); // calls repaint 
 
-    qDebug() << "Current angle" << m_current_angle;
+    //qDebug() << "Current angle" << m_current_angle;
 }
+
 
 double AnalogGauge::map_speed_to_angle(int speed) 
 {   
@@ -425,6 +446,7 @@ void AnalogGauge::move_needle()
     group->addAnimation(sweep);
     group->addPause(pause_duration);
     group->addAnimation(retreat);
+
     // playback
     group->start(QAbstractAnimation::DeleteWhenStopped); // clean up when done
 
@@ -447,8 +469,6 @@ void AnalogGauge::animate_to(double target_value)
 }
 
 
-
-
 void AnalogGauge::set_current_angle(double angle)
 {
     if (m_current_angle != angle) // check if the value actually changed
@@ -460,10 +480,12 @@ void AnalogGauge::set_current_angle(double angle)
     }
 }
 
+
 void AnalogGauge::load_background_image(const QString& bg)
 {    
     m_background.load(bg);
 }
+
 
 void AnalogGauge::load_needle_image(const QString& needle_image)
 {
@@ -473,6 +495,7 @@ void AnalogGauge::load_needle_image(const QString& needle_image)
     m_needle_width = m_needle.width();
     m_needle_height = m_needle.height();
 }
+
 
 void AnalogGauge::load_needle_cap_image(const QString& needle_cap_image)
 {
@@ -500,36 +523,31 @@ void AnalogGauge::load_needle_cap_image(const QString& needle_cap_image)
 SystemMonitor::SystemMonitor(QObject* parent): QObject(parent), m_smooth_cpu(0.0), m_smooth_disk(0.0)
 {
 
-#ifdef Q_OS_WIN
-    init_pdh_queries();
+    #ifdef Q_OS_WIN
+        init_pdh_queries();
 
-#elif defined(Q_OS_LINUX)
+    #elif defined(Q_OS_LINUX)
 
-    QTimer* cpu_timer = new QTimer(this);
-    QTimer* ram_timer = new QTimer(this);
+    
 
-    connect(cpu_timer, &QTimer::timeout, this, &SystemMonitor::query_cpu_proc);
-    connect(ram_timer, &QTimer::timeout, this, &SystemMonitor::query_ram_proc);
-
-    cpu_timer->start(180);  // CPU updates
-    ram_timer->start(400); // RAM updates less often 
-
-#endif
+    #endif
     
 }
+
 
 SystemMonitor::~SystemMonitor()
 {
-#ifdef Q_OS_WIN
-    // close PDH queries on exit
-    if (m_cpu_query)
-        PdhCloseQuery(m_cpu_query);
-    if (m_memory_query)
-        PdhCloseQuery(m_memory_query);
+    #ifdef Q_OS_WIN
+        // close PDH queries on exit
+        if (m_cpu_query)
+            PdhCloseQuery(m_cpu_query);
+        if (m_memory_query)
+            PdhCloseQuery(m_memory_query);
     
-#endif
+    #endif
 
 }
+
 
 #ifdef Q_OS_WIN
 
@@ -543,6 +561,7 @@ double SystemMonitor::get_cpu()
         return 0.0;
     #endif
 }
+
 
 double SystemMonitor::get_memory()
 {
@@ -564,11 +583,8 @@ void SystemMonitor::init_pdh_queries()
     PdhAddCounter(m_cpu_query, L"\\Processor(_Total)\\% Processor Time", 0, &m_cpu_counter);
 
     PdhOpenQuery(NULL, 0, &m_memory_query);
-    PdhAddCounter(m_memory_query, L"\\Memory\\Available MBytes", 0, &m_memory_counter);
-
-   
+    PdhAddCounter(m_memory_query, L"\\Memory\\Available MBytes", 0, &m_memory_counter);   
 }
-
 
 
 double SystemMonitor::get_cpu_usage_pdh()
@@ -578,7 +594,7 @@ double SystemMonitor::get_cpu_usage_pdh()
     PdhGetFormattedCounterValue(m_cpu_counter, PDH_FMT_DOUBLE, NULL, &value);
 
     static std::vector<double> values;
-    static const int WINDOW_SIZE = 5;
+    static const int WINDOW_SIZE = 20;
 
     double current_cpu = value.doubleValue;
     //qDebug() << "CURRENT CPU LOAD: " << current_cpu;    
@@ -594,11 +610,9 @@ double SystemMonitor::get_cpu_usage_pdh()
     double sum = 0;
     for (double v : values) { sum += v; }
 
-    return sum / values.size();
-        
+    return sum / values.size();       
     
 }
-
 
 
 double SystemMonitor::get_memory_usage_pdh()
@@ -615,9 +629,7 @@ double SystemMonitor::get_memory_usage_pdh()
 
     DWORDLONG total_memory = mem_info.ullTotalPhys / (1024 * 1024); // convert to MB
     double available_MB = value.doubleValue;
-    double used_memory_percentage = ((total_memory - available_MB) / total_memory) * 100.0;
-
-    
+    double used_memory_percentage = ((total_memory - available_MB) / total_memory) * 100.0;    
 
     return used_memory_percentage;
 }
@@ -641,7 +653,7 @@ double SystemMonitor::query_cpu_proc()
 
         qDebug() << "CPU LOAD: " << cpu;
 
-        // Return average
+        // return average
         double sum = 0;
         for (double v : values) sum += v;
         return sum / values.size();

@@ -82,10 +82,9 @@ class AnalogGauge : public QWidget
 {
     Q_OBJECT    
         
-    
+    // Qt animation system used for the smooth animations
     Q_PROPERTY(double current_angle READ get_current_angle WRITE set_current_angle NOTIFY current_angle_changed)
-
-    //      data type property name      getter                  setter                   signal
+    //      data-type property name      getter                  setter                   signal
 private:
 
     QImage m_background;
@@ -124,7 +123,14 @@ public:
         QPoint label_pos,
         QWidget* parent = nullptr
     ); 
-    // max_range is 3.6 for 360 degree rotation
+    // needle_start_pos - where does the needle points at 0, the actual gauge start position
+    // max_range - 3.6 for 360 degree rotation or whatever range is needed for the gauge to cover (negative values rotate the needle counter-clock-wise)
+    // bg - background image
+    // needle_img - the needle image file
+    // neddle_cap_img - the cap image used on top of the needle base
+    // label_text - describes the gauge itself
+    // label_pos - where on the gauge does the label appear
+
 
     void show_description_label();
 
@@ -140,10 +146,9 @@ public:
 
     void move_needle();
 
-    void animate_to(double target_value);//
-
-    // for the animation
-    double get_current_angle() const { return m_current_angle; }
+    void animate_to(double target_value); // hand-over animation after demo mode
+   
+    double get_current_angle() const { return m_current_angle; } // for the animation
 
     void set_current_angle(double angle);
 
@@ -193,12 +198,10 @@ private:
 
     PDH_HQUERY m_memory_query;
     PDH_HCOUNTER m_memory_counter; 
-
     
     // Linux implementation
 
-    #elif defined(Q_OS_LINUX)  
-
+    #elif defined(Q_OS_LINUX) 
 
     double m_smooth_cpu;
     double m_smooth_disk;
