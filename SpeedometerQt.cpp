@@ -165,8 +165,8 @@ void RadialGauge::create_cpu_number_output_label()
     QString family = QFontDatabase::applicationFontFamilies(id).at(0);
 
     m_cpu_load_number = new QLabel("000%", this);
-    m_font = new QFont(family, 24, QFont::Bold);  // name, size
-    m_cpu_load_number->setFont(*m_font);
+    m_font = QFont(family, 24, QFont::Bold);  // name, size
+    m_cpu_load_number->setFont(m_font);
 
     m_cpu_load_number->setStyleSheet("color: transparent;");    
     m_cpu_load_number->adjustSize();
@@ -247,7 +247,7 @@ void RadialGauge::create_cpu_gauge()
                 
                 m_cpu_load_number->setText(QString("%1%").arg(value_as_string));
                 m_cpu_load_number->adjustSize();
-                m_font->setFixedPitch(true);
+                //m_font.setFixedPitch(true);
             }
 
                              

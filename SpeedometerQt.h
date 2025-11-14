@@ -66,7 +66,7 @@ private:
     QLabel* m_cpu_load_number;
     QPoint m_drag_position;
 
-    QFont* m_font;
+    QFont m_font; // value member
     QGraphicsDropShadowEffect* m_outline;
 
     QPushButton* m_demo_button;
